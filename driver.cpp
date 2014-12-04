@@ -192,6 +192,8 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
     fout << "Mean = " << mean << "\n\n\n";
     
     fout << "Standard deviation = " << std_dev << "\n\n\n";
+    
+    fout << "Community size" << "\t\t\t" << "Conductance\n";
 
 	for(int i = 0; i < conductances.size(); i++)
 	{
@@ -282,6 +284,8 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
     fout << "Mean = " << mean << "\n\n\n";
     
     fout << "Standard deviation = " << std_dev << "\n\n\n";
+    
+    fout << "Community size" << "\t\t\t" << "Conductance\n";
 
 	for(int i = 0; i < conductances.size(); i++)
 	{

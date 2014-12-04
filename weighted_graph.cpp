@@ -158,7 +158,7 @@ void WeightedGraph::calc_edge_total()
 
 void WeightedGraph::mergeNodes(int node1, int node2)
 {
-	//find and remove node2 using std::remove (change later for efficiency)
+	//find and remove node2 using std::remove
 	vertex[node1].neighbors.erase(std::remove(vertex[node1].neighbors.begin(),
 									vertex[node1].neighbors.end(),
 									node2),

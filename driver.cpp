@@ -17,6 +17,7 @@
 #include <map>
 #include <iomanip>
 #include <fstream>
+#include <cmath>
 
 using namespace std;
 
@@ -115,7 +116,6 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 
 	// Also write the size of each community and its conductance
 	// to a file
-
 	std::string file_prefix("./intermediate_conductances/conductance_");
 	std::string file_name = file_prefix + std::to_string(file_no);
 
@@ -133,7 +133,7 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 
 	for(int i = 0; i < wg.num_vertices; i++)
 	{
-		if(wg.vertex[i].origNodes.size() == 0)
+		if(wg.vertex[i].origNodes.size() == 0 || wg.vertex[i].id != i)
 		{
 			continue;
 		}
@@ -166,14 +166,38 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 	}
 
 	std::sort(conductances.begin(), conductances.end(), less_than_key_2());
+    
+    // Calculate standard deviation and mean of the conductance values
+    double mean;
+    double std_dev;
+    double sum = 0;
+    double squared_sum = 0;
+    
+    for (int i = 0; i < conductances.size(); i++)
+    {
+        sum += conductances[i].second;
+    }
+    mean = sum / conductances.size();
+    
+    
+    for (int i = 0; i < conductances.size(); i++)
+    {
+        squared_sum += std::pow((mean - conductances[i].second), 2);
+    }
+    std_dev = sqrt((squared_sum) / conductances.size());
+    
 
 	fout << "Current modularity = " << modularity << "\n\n\n";
+    
+    fout << "Mean = " << mean << "\n\n\n";
+    
+    fout << "Standard deviation = " << std_dev << "\n\n\n";
 
 	for(int i = 0; i < conductances.size(); i++)
 	{
 		fout << conductances[i].first << "\t\t\t" << conductances[i].second << "\n";
 	}
-	fout.close(); // not necessary, destructor is called when function returns
+	fout.close(); // not necessary, destructor will do it
 	file_no++;
 }
 
@@ -233,6 +257,31 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 	}
 
 	std::sort(conductances.begin(), conductances.end(), less_than_key_2());
+    
+    // Calculate standard deviation and mean of the conductance values
+    double mean;
+    double std_dev;
+    double sum = 0;
+    double squared_sum = 0;
+    
+    for (int i = 0; i < conductances.size(); i++)
+    {
+        sum += conductances[i].second;
+    }
+    mean = sum / conductances.size();
+    
+    
+    for (int i = 0; i < conductances.size(); i++)
+    {
+        squared_sum += std::pow((mean - conductances[i].second), 2);
+    }
+    std_dev = sqrt((squared_sum) / conductances.size());
+    
+    fout << "Final modularity = " << wg.modularity(g) << "\n\n\n";
+    
+    fout << "Mean = " << mean << "\n\n\n";
+    
+    fout << "Standard deviation = " << std_dev << "\n\n\n";
 
 	for(int i = 0; i < conductances.size(); i++)
 	{
@@ -481,7 +530,7 @@ void parse_args(int argc, char** argv)
 	}
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	clock_t start; //calculates time for iteration
 
@@ -571,18 +620,22 @@ int main(int argc, char **argv)
 
 	best_wg = c.partition_one_level(g, finalEdges);
 
-
-	ClusterTabuList * perturb_tabu_list = new ClusterTabuList[g.num_vertices]; //tabu list for each vertex, we don't want to reassign to the same cluster
-
+    // tabu list for each vertex, we don't want to reassign to the same cluster
+    ClusterTabuList * perturb_tabu_list = new ClusterTabuList[g.num_vertices];
 	//ClusterTabuList* cluster_tabu_list = new ClusterTabuList[g.num_vertices];
 
 	double new_modularity, prev_modularity, best_modularity; //keeps track of modularity
+    
+    
+    // empty the directory where the intermediate conductance values will be stored
+    system("exec rm -r ./intermediate_conductances/*");
 
-	/*
-	 * Initialize all the modularities
-	 */
+	//Initialize all the modularities
 	prev_modularity = wg.modularity(g);
 	best_modularity = prev_modularity;
+    
+    // write the initial conductance values to file
+    calc_conductance(wg, g, prev_modularity, file_no);
 
 	int decrease = 0, round_one_decrease = 0, final_decrease = 0; // keeps track of number of rounds without improvement
 
@@ -604,8 +657,11 @@ int main(int argc, char **argv)
                     
                     
 					wg = c.rebuild_graph(finalEdges);
-
 					new_modularity = wg.modularity(g);
+                    
+                    // we want to track the change in conductance value
+                    // after every step in the local opt
+                    calc_conductance(wg, g, new_modularity, file_no);
 
 					if(new_modularity > prev_modularity)
 					{
@@ -614,7 +670,7 @@ int main(int argc, char **argv)
 						{
 							best_wg = c.rebuild_graph(finalEdges);
 							best_modularity = new_modularity;
-							calc_conductance(best_wg, g, best_modularity, file_no);
+							//calc_conductance(best_wg, g, best_modularity, file_no);
 						}
 					}
 					else
@@ -640,6 +696,7 @@ int main(int argc, char **argv)
 					}
 				}
 				best_modularity = best_wg.modularity(g);
+            
 				wg = c.rebuild_graph(finalEdges); // store the best graph so far in wg
 
 				//merging step
@@ -658,6 +715,10 @@ int main(int argc, char **argv)
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
+            
+                // write conductance to file
+                calc_conductance(wg, g, new_modularity, file_no);
+            
 				if(new_modularity > best_modularity)
 				{
 					//change cluster assignments to wg as it's better
@@ -674,7 +735,6 @@ int main(int argc, char **argv)
 
 					best_modularity = new_modularity;
 					best_wg = c.rebuild_graph(finalEdges);
-					calc_conductance(best_wg, g, best_modularity, file_no);
 				}
 
 				c.reset_degrees();
@@ -728,13 +788,16 @@ int main(int argc, char **argv)
 
 				wg = c.rebuild_graph(finalEdges);
 				new_modularity = wg.modularity(g);
+            
+                // write conductance to file
+                calc_conductance(wg, g, new_modularity, file_no);
 
 				// check for improvement
 				if(new_modularity > best_modularity) // just change to check
 				{
 					best_modularity = new_modularity;
 					best_wg = c.rebuild_graph(finalEdges);
-					calc_conductance(best_wg, g, best_modularity, file_no);
+					//calc_conductance(best_wg, g, best_modularity, file_no);
 				}
 				else
 				{
@@ -762,15 +825,19 @@ int main(int argc, char **argv)
 		split_clusters(wg, c, g);
 		c.reset_degrees();
 		c.recalc_degrees(finalEdges);
+        
 		wg = c.rebuild_graph(finalEdges);
 		new_modularity = wg.modularity(g);
+        
+        // write conductance to file
+        calc_conductance(wg, g, best_modularity, file_no);
 
 		// check if splitting improves the solution
 		if(new_modularity > best_modularity)
 		{
 			best_wg = c.rebuild_graph(finalEdges);
 			best_modularity = new_modularity;
-			calc_conductance(best_wg, g, best_modularity, file_no);
+			//calc_conductance(best_wg, g, best_modularity, file_no);
 		}
 		else
 		{

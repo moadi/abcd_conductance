@@ -376,7 +376,7 @@ Graph::Graph(char * fileName)
 				}
 			}
 		}
-		delete[] count; //delete count to free up space
+		delete[] count;
 		fin.close();
 	}
 }

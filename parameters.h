@@ -29,7 +29,7 @@ class Parameters
 			}
 
 			decay = 0.95;
-			maxIterations = 25;
+			maxIterations = 30;
 			maxTries = 2;
 
 			long int max_edges = ((g.num_vertices)*(g.num_vertices - 1))/2;

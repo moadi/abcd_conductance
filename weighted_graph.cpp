@@ -19,9 +19,10 @@ void WeightedGraph::displayGraph()
 {
 	std::unordered_map<pair<int, int>, int >::iterator cross_edges_it;
 	std::unordered_map<pair<int, int>, double >::iterator cross_phm_it;
-	ofstream fout("output.dat");
-
-	ofstream communities("comm-struc.dat");
+    
+	ofstream fout("output");
+    ofstream communities("comm-struc");
+    
 	int num = 0;
 	int clusters = 0;
 	for(int i = 0; i < num_vertices; i++)
@@ -72,7 +73,7 @@ void WeightedGraph::displayGraph()
 
 		communities << "Number of edges = " << edges.cross_edges.size() << "\n\n";
 
-//	cout << num << endl << endl;
+	cout << num << endl << endl;
 //
 	cout << "Number of communities found = " << clusters << "\n\n";
 

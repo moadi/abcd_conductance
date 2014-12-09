@@ -584,8 +584,11 @@ int main(int argc, char** argv)
 	for(int i = 0; i < p.maxIterations; i++)
 	{
 		antsMove(ants, &g, helper, p);
-		resetAnts(ants, &g, helper);
-		eta = eta * p.decay;
+        if ((i+1)%5 == 0)
+        {
+            resetAnts(ants, &g, helper);
+		}
+        eta = eta * p.decay;
 		if (eta < 0.02) //we don't want the evaporation factor to get too small
 		{
 			eta = 0.02;

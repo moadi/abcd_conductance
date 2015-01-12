@@ -539,6 +539,8 @@ int main(int argc, char** argv)
 	clock_t start; //calculates time for iteration
 
 	parse_args(argc, argv);
+    
+    cout << "Preprocessing...\n\n";
 
 	cout << "Input file : " << inputFile << "\n\n";
 
@@ -557,8 +559,6 @@ int main(int argc, char** argv)
 	calcNeighborhoodSize(&g);
 
 	//cout << "Completed...\n\n";
-	//cout << "Time for finalizing neighborhood = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
-
 	//create the ants and place them on the graph
 	Ant * ants = new Ant[g.num_vertices];
 	//std::vector<Ant> ants(g.num_vertices);
@@ -575,19 +575,24 @@ int main(int argc, char** argv)
 	Parameters p(g);
 
 	Helper helper(g);
+    
+    cout << "Preprocessing time = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
+
 
 	int file_no = 1; // used to number intermediate conductance files
 
 	cout << "Exploration phase....\n\n";
+    
+    start = clock();
 
 	//exploration of the graph is done by the ants
 	for(int i = 0; i < p.maxIterations; i++)
 	{
 		antsMove(ants, &g, helper, p);
-        if ((i+1)%5 == 0)
-        {
+//      if ((i+1)%5 == 0)
+//      {
             resetAnts(ants, &g, helper);
-		}
+//		}
         eta = eta * p.decay;
 		if (eta < 0.02) //we don't want the evaporation factor to get too small
 		{
@@ -614,10 +619,7 @@ int main(int argc, char** argv)
 	//cout << "\n";
 
 
-	/*
-	 * Begin local optimization
-	 */
-	cout << "Local optimization....\n\n";
+
 	Community c(g);
 	WeightedGraph wg = c.partition_one_level(g, finalEdges);
 	//cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
@@ -626,7 +628,7 @@ int main(int argc, char** argv)
 	WeightedGraph best_wg; //keeps track of the best partition so far
 
 	best_wg = c.partition_one_level(g, finalEdges);
-
+    
     // tabu list for each vertex, we don't want to reassign to the same cluster
     ClusterTabuList * perturb_tabu_list = new ClusterTabuList[g.num_vertices];
 	//ClusterTabuList* cluster_tabu_list = new ClusterTabuList[g.num_vertices];
@@ -645,6 +647,11 @@ int main(int argc, char** argv)
     calc_conductance(wg, g, prev_modularity, file_no);
 
 	int decrease = 0, round_one_decrease = 0, final_decrease = 0; // keeps track of number of rounds without improvement
+    
+    /*
+	 * Begin local optimization
+	 */
+	cout << "Local optimization....\n\n";
 
 	while(final_decrease < p.max_decrease)
 	{
@@ -767,10 +774,13 @@ int main(int argc, char** argv)
 							cluster = it->first;
 							//if this cluster had been previously considered
 							if(perturb_tabu_list[i].searchList(cluster) == true)
-								continue; //skip
+                            {
+								cout << "Considered " << cluster << " before.\n";
+                                continue; //skip
+                            }
 
-							if(max_out_degree < 2*abs(c.delta[i]))
-								continue;
+//							if(max_out_degree < 2*abs(c.delta[i]))
+//								continue;
 
 							if(it->second > max_out_degree)
 							{
@@ -778,6 +788,9 @@ int main(int argc, char** argv)
 								max_out_degree = it->second;
 							}
 						}
+                        
+                        if(max_out_degree < 2*abs(c.delta[i]))
+                            continue;
 
 						perturb_tabu_list[i].addToList(c.n2c[i]); //add cluster to tabu list
 //						if(cluster_tabu_list[i].searchList(c.n2c[i]) == false)
@@ -863,7 +876,7 @@ int main(int argc, char** argv)
 
 	cout << "Final modularity = " << best_wg.modularity(g) << "\n\n";
 
-	cout << "Total time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
+	cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
 
 
 
@@ -874,7 +887,7 @@ int main(int argc, char** argv)
 	delete[] perturb_tabu_list;
     
     // Before removing the ants, clean up the pointers
-    // This is because both Graph->neighbors and Ant->neighbors
+    // This is because both Graph.neighbors and Ant->neighbors
     // point to the same memory location, and the graph destructor is called
     // when the program terminates. This avoids deallocating already free'd memory
     

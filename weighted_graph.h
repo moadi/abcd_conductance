@@ -57,6 +57,8 @@ class WeightedGraph
 		//WeightedGraph(Graph&);
 
 		WeightedGraph() { }
+    
+        WeightedGraph(const WeightedGraph&) { cout << "WeightedGraph copy was called\n"; }
 
 		void displayGraph();
 

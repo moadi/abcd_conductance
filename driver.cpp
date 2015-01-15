@@ -88,7 +88,7 @@ void resetAnts(Ant* ants, Graph * graph, Helper &helper)
 {
 	//std::uniform_real_distribution<> dis(0,1);
 	//std::uniform_int_distribution<> vertex(0, graph->num_vertices-1); //generate a number between 0 and n-1
-	for(int i=0; i < graph->num_vertices; i++)
+	for(int i=0; i < graph->num_vertices; ++i)
 	{
 		if(helper.probability() < 0.5)
 			ants[i].location = graph->vertex[helper.newVertex()]; //change location if random value is below 0.5
@@ -131,7 +131,7 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 
 	double conductance;
 
-	for(int i = 0; i < wg.num_vertices; i++)
+	for(int i = 0; i < wg.num_vertices; ++i)
 	{
 		if(wg.vertex[i].origNodes.size() == 0 || wg.vertex[i].id != i)
 		{
@@ -141,12 +141,12 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 		community_degree = 0;
 		total_crossing_edges = 0;
 
-		for(unsigned int j = 0; j < wg.vertex[i].origNodes.size(); j++)
+		for(unsigned int j = 0; j < wg.vertex[i].origNodes.size(); ++j)
 		{
 			community_degree += g.vertex[wg.vertex[i].origNodes[j]].degree;
 		}
 
-		for(unsigned int j = 0; j < wg.vertex[i].neighbors.size(); j++)
+		for(unsigned int j = 0; j < wg.vertex[i].neighbors.size(); ++j)
 		{
 			int neighbor = wg.vertex[i].neighbors[j];
 			if(i < neighbor)
@@ -173,14 +173,14 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
     double sum = 0;
     double squared_sum = 0;
     
-    for (int i = 0; i < conductances.size(); i++)
+    for (int i = 0; i < conductances.size(); ++i)
     {
         sum += conductances[i].second;
     }
     mean = sum / conductances.size();
     
     
-    for (int i = 0; i < conductances.size(); i++)
+    for (int i = 0; i < conductances.size(); ++i)
     {
         squared_sum += std::pow((mean - conductances[i].second), 2);
     }
@@ -195,12 +195,12 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
     
     fout << "Community size" << "\t\t\t" << "Conductance\n";
 
-	for(int i = 0; i < conductances.size(); i++)
+	for(int i = 0; i < conductances.size(); ++i)
 	{
 		fout << conductances[i].first << "\t\t\t" << conductances[i].second << "\n";
 	}
 	fout.close(); // not necessary, destructor will do it
-	file_no++;
+	++file_no;
 }
 
 
@@ -226,7 +226,7 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 
 	for(int i = 0; i < wg.num_vertices; i++)
 	{
-		if(wg.vertex[i].origNodes.size() == 0)
+		if(wg.vertex[i].origNodes.size() == 0 || wg.vertex[i].id != i)
 		{
 			continue;
 		}
@@ -580,6 +580,12 @@ int main(int argc, char** argv)
 
 
 	int file_no = 1; // used to number intermediate conductance files
+    
+    double new_explr_mod = 0, best_explr_mod = 0;
+    
+    WeightedGraph best_explr_wg;
+    
+    std::vector<Edge> finalEdges(g.edges.size());
 
 	cout << "Exploration phase....\n\n";
     
@@ -589,10 +595,44 @@ int main(int argc, char** argv)
 	for(int i = 0; i < p.maxIterations; i++)
 	{
 		antsMove(ants, &g, helper, p);
-//      if ((i+1)%5 == 0)
-//      {
+        
+//        if ((i+1)%5 == 0)
+//        {
             resetAnts(ants, &g, helper);
 //		}
+        
+        std::vector<Edge> graph_edges(g.edges.size());
+        
+        unsigned int edge_num = 0;
+        
+        for(auto it = g.edges.begin(); it != g.edges.end(); it++)
+        {
+            graph_edges[edge_num] = it->second;
+            ++edge_num;
+        }
+        
+        std::sort(graph_edges.begin(), graph_edges.end(), greater_than_key());
+        
+//        for(int i = 0; i < graph_edges.size(); i++)
+//        {
+//            cout << graph_edges[i].v1 << " " << graph_edges[i].v2 << " " << graph_edges[i].phm << "\n";
+//        }
+        
+        WeightedGraph explr_wg;
+        
+        Community c(g);
+        
+        explr_wg = c.partition_one_level(g, graph_edges);
+        
+        new_explr_mod = explr_wg.modularity(g);
+        
+        if (new_explr_mod > best_explr_mod)
+        {
+            best_explr_wg = explr_wg;
+            best_explr_mod = new_explr_mod;
+            finalEdges = graph_edges;
+        }
+        
         eta = eta * p.decay;
 		if (eta < 0.02) //we don't want the evaporation factor to get too small
 		{
@@ -602,14 +642,14 @@ int main(int argc, char** argv)
 
 	//cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
 
-	std::vector<Edge> finalEdges;
-
-	for(auto it = g.edges.begin(); it != g.edges.end(); it++)
-	{
-		finalEdges.push_back(it->second);
-	}
-
-	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
+//	std::vector<Edge> finalEdges;
+//
+//	for(auto it = g.edges.begin(); it != g.edges.end(); it++)
+//	{
+//		finalEdges.push_back(it->second);
+//	}
+//
+//	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
 
 	/*for(int i = 0; i < finalEdges.size(); i++)
 	{
@@ -620,14 +660,20 @@ int main(int argc, char** argv)
 
 
 
-	Community c(g);
+    Community c(g);
+	
 	WeightedGraph wg = c.partition_one_level(g, finalEdges);
+    //WeightedGraph wg;
+    
+    //wg = best_explr_wg;
+    
 	//cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
 
 
 	WeightedGraph best_wg; //keeps track of the best partition so far
 
-	best_wg = c.partition_one_level(g, finalEdges);
+	//best_wg = c.partition_one_level(g, finalEdges);
+    best_wg = wg;
     
     // tabu list for each vertex, we don't want to reassign to the same cluster
     ClusterTabuList * perturb_tabu_list = new ClusterTabuList[g.num_vertices];
@@ -673,7 +719,7 @@ int main(int argc, char** argv)
 					wg = c.rebuild_graph(finalEdges);
 					new_modularity = wg.modularity(g);
                     
-                    // we want to track the change in conductance value
+                    // we want to track the change i  n conductance value
                     // after every step in the local opt
                     calc_conductance(wg, g, new_modularity, file_no);
 
@@ -682,7 +728,9 @@ int main(int argc, char** argv)
 						prev_modularity = new_modularity;
 						if(new_modularity > best_modularity)
 						{
-							best_wg = c.rebuild_graph(finalEdges);
+							//best_wg = c.rebuild_graph(finalEdges);
+                            best_wg = wg;
+                            
 							best_modularity = new_modularity;
 							//calc_conductance(best_wg, g, best_modularity, file_no);
 						}
@@ -711,7 +759,8 @@ int main(int argc, char** argv)
 				}
 				best_modularity = best_wg.modularity(g);
             
-				wg = c.rebuild_graph(finalEdges); // store the best graph so far in wg
+				//wg = c.rebuild_graph(finalEdges); // store the best graph so far in wg
+                wg = best_wg;
 
 				//merging step
 				wg.calc_edge_total();
@@ -748,7 +797,8 @@ int main(int argc, char** argv)
 					}
 
 					best_modularity = new_modularity;
-					best_wg = c.rebuild_graph(finalEdges);
+					//best_wg = c.rebuild_graph(finalEdges);
+                    best_wg = wg;
 				}
 
 				c.reset_degrees();
@@ -816,7 +866,9 @@ int main(int argc, char** argv)
 				if(new_modularity > best_modularity) // just change to check
 				{
 					best_modularity = new_modularity;
-					best_wg = c.rebuild_graph(finalEdges);
+					//best_wg = c.rebuild_graph(finalEdges);
+                    best_wg = wg;
+                    
 					//calc_conductance(best_wg, g, best_modularity, file_no);
 				}
 				else
@@ -850,12 +902,14 @@ int main(int argc, char** argv)
 		new_modularity = wg.modularity(g);
         
         // write conductance to file
-        calc_conductance(wg, g, best_modularity, file_no);
+        calc_conductance(wg, g, new_modularity, file_no);
 
 		// check if splitting improves the solution
 		if(new_modularity > best_modularity)
 		{
-			best_wg = c.rebuild_graph(finalEdges);
+			//best_wg = c.rebuild_graph(finalEdges);
+            best_wg = wg;
+            
 			best_modularity = new_modularity;
 			//calc_conductance(best_wg, g, best_modularity, file_no);
 		}

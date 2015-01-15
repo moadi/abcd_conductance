@@ -28,7 +28,7 @@ void WeightedGraph::displayGraph()
 	for(int i = 0; i < num_vertices; i++)
 	{
 		//if this cluster has been merged or all it's members reassigned , ignore
-		if((vertex[i].origNodes.size() == 0)) //(vertex[i].id != i) || )
+		if((vertex[i].origNodes.size() == 0) || vertex[i].id != i )
 					continue;
 
 		++clusters;

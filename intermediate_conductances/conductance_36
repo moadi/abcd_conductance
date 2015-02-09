@@ -1,21 +1,16 @@
-Current modularity = 0.601009
+Current modularity = 0.000676242
 
 
-Mean = 0.339666
+Mean = 0.827718
 
 
-Standard deviation = 0.116183
+Standard deviation = 0.366337
 
 
-4			0.657143
-6			0.482759
-8			0.363636
-9			0.257732
-9			0.354167
-9			0.294118
-10			0.272727
-10			0.351852
-11			0.290323
-12			0.261538
-12			0.25
-15			0.24
+Community size			Conductance
+1			1
+1			1
+2			1
+4			0.956989
+4			1
+988			0.0093174

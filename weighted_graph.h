@@ -20,12 +20,20 @@ class WeightedVertex
 {
 	public:
 		int in_links; //number of internal links in this new vertex (can be used to calculate modularity)
+    
 		int id; //id of the vertex
+    
 		double weight; //weight (or total pheromone) of all the edges within this new vertex
+    
 		int degree; //degree of this community
+    
 		double total; //total pheromone (in + out) at this vertex
+    
 		std::vector<int> origNodes; //nodes from the original graph in this community
+    
 		std::vector<int> neighbors; //vertices this one is connected to
+    
+        unsigned int degree_sum; //sum of the degrees of the nodes in this community
 
 		WeightedVertex()
 		{
@@ -33,6 +41,7 @@ class WeightedVertex
 			in_links = 0;
 			weight = 0;
 			degree = 0;
+            degree_sum = 0;
 		}
 };
 
@@ -67,6 +76,10 @@ class WeightedGraph
 		void calc_edge_total();
 
 		void mergeClusters(std::vector<pair<pair<int, int>, double > >&, Parameters&);
+    
+        void mergeClusters(int); //merge using modularity
+    
+        double modularity_gain(int, int, int); // computes gain in modularity
 
 		void mergeNodes(int, int);
 

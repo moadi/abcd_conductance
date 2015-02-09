@@ -48,12 +48,16 @@ WeightedGraph Community::partition_one_level(Graph& g, std::vector<Edge>& finalE
 			n2c[a] = comm; //assign a community to both nodes
 			n2c[b] = comm;
 
-			wg.vertex[comm].origNodes.push_back(a); //add the nodes to the orgiNodes vector
+			wg.vertex[comm].origNodes.push_back(a); //add the nodes to the origNodes vector
 			wg.vertex[comm].origNodes.push_back(b);
 
 			wg.vertex[comm].weight += phm; //update the weight of the new vertex and its in_links
 			wg.vertex[comm].in_links++;
 			wg.vertex[comm].total += phm;
+            
+            // add the degrees to the data member degree_sum
+            wg.vertex[comm].degree_sum += g.vertex[a].degree;
+            wg.vertex[comm].degree_sum += g.vertex[b].degree;
 
 			++in_degree[a];
 			++in_degree[b];
@@ -75,6 +79,7 @@ WeightedGraph Community::partition_one_level(Graph& g, std::vector<Edge>& finalE
 			wg.vertex[n2c[b]].weight += phm;
 			wg.vertex[n2c[b]].origNodes.push_back(a);
 			wg.vertex[n2c[b]].total += phm;
+            wg.vertex[n2c[b]].degree_sum += g.vertex[a].degree;
 
 			n2c[a] = n2c[b];
 
@@ -87,6 +92,7 @@ WeightedGraph Community::partition_one_level(Graph& g, std::vector<Edge>& finalE
 			wg.vertex[n2c[a]].weight += phm;
 			wg.vertex[n2c[a]].origNodes.push_back(b);
 			wg.vertex[n2c[a]].total += phm;
+            wg.vertex[n2c[a]].degree_sum += g.vertex[b].degree;
 
 			n2c[b] = n2c[a];
 
@@ -104,11 +110,9 @@ WeightedGraph Community::partition_one_level(Graph& g, std::vector<Edge>& finalE
 			{
 				edge = make_pair(n2c[b], n2c[a]);
 			}
-			std::unordered_map<pair<int, int>, int >::iterator it1;
-			std::unordered_map<pair<int, int>, double >::iterator it2;
 
-			it1 = wg.edges.cross_edges.find(edge);
-			it2 = wg.edges.cross_phm.find(edge);
+			auto it1 = wg.edges.cross_edges.find(edge);
+			auto it2 = wg.edges.cross_phm.find(edge);
 
 			auto out_deg_it_1 = out_degree[a].find(n2c[b]);
 			auto out_deg_it_2 = out_degree[b].find(n2c[a]);
@@ -510,7 +514,7 @@ void Community::reassign_communities(Graph& g)
 	//cout << "Total nodes replaced = " << nodes_replaced << "\n\n";
 }
 
-WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges)
+WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges, Graph& g)
 {
 	WeightedGraph wg;
 	wg.num_vertices = comm;
@@ -540,6 +544,7 @@ WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges)
 			else
 			{
 				wg.vertex[n2c[a]].origNodes.push_back(a);
+                wg.vertex[n2c[a]].degree_sum += g.vertex[a].degree;
 			}
 
 			if(std::find(wg.vertex[n2c[a]].origNodes.begin(), wg.vertex[n2c[a]].origNodes.end(), b) != wg.vertex[n2c[a]].origNodes.end()) //if b is present
@@ -549,6 +554,7 @@ WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges)
 			else
 			{
 				wg.vertex[n2c[a]].origNodes.push_back(b);
+                wg.vertex[n2c[a]].degree_sum += g.vertex[b].degree;
 			}
 		}
 		else
@@ -570,6 +576,7 @@ WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges)
 			else
 			{
 				wg.vertex[n2c[a]].origNodes.push_back(a);
+                wg.vertex[n2c[a]].degree_sum += g.vertex[a].degree;
 			}
 
 			if(std::find(wg.vertex[n2c[b]].origNodes.begin(), wg.vertex[n2c[b]].origNodes.end(), b) != wg.vertex[n2c[b]].origNodes.end()) //if b is present
@@ -579,12 +586,12 @@ WeightedGraph Community::rebuild_graph(std::vector<Edge>& finalEdges)
 			else
 			{
 				wg.vertex[n2c[b]].origNodes.push_back(b);
+                wg.vertex[n2c[b]].degree_sum += g.vertex[b].degree;
 			}
 
-			std::unordered_map<pair<int, int>, int >::iterator it1;
-			std::unordered_map<pair<int, int>, double >::iterator it2;
-			it1 = wg.edges.cross_edges.find(edge);
-			it2 = wg.edges.cross_phm.find(edge);
+
+			auto it1 = wg.edges.cross_edges.find(edge);
+			auto it2 = wg.edges.cross_phm.find(edge);
 
 
 			if(it1 == wg.edges.cross_edges.end()) //if this pair does not exist in the table ==> first crossing edge

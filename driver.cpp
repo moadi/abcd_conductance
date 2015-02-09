@@ -5,7 +5,7 @@
 #include "helper.h"
 #include "parameters.h"
 #include "cluster_tabu_list.h"
-//#include "weighted_graph.h"
+#include "weighted_graph.h"
 
 
 #include <iostream>
@@ -422,7 +422,7 @@ void write_partition(char * output_file, WeightedGraph& wg, Graph& g)
 void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 {
 	bool moved;
-	typename unordered_map<pair<int, int>, Edge>::iterator edge_it;
+	unordered_map<pair<int, int>, Edge>::iterator edge_it;
 	pair<int, int> edge;
 
 	for(int j = 1; j <= p.maxSteps; j++)
@@ -568,9 +568,9 @@ int main(int argc, char** argv)
 		ants[i].location = g.vertex[i];
 	}
 
-	cout<<"Number of edges = " << g.num_edges << "\n\n";
+	cout << "Number of edges = " << g.num_edges << "\n\n";
 
-	cout<<"Number of vertices = " << g.num_vertices << "\n\n";
+	cout << "Number of vertices = " << g.num_vertices << "\n\n";
 
 	Parameters p(g);
 
@@ -586,13 +586,15 @@ int main(int argc, char** argv)
     WeightedGraph best_explr_wg;
     
     std::vector<Edge> finalEdges(g.edges.size());
+    
+    unsigned int rounds_without_improvement = 0;
 
 	cout << "Exploration phase....\n\n";
     
     start = clock();
 
 	//exploration of the graph is done by the ants
-	for(int i = 0; i < p.maxIterations; i++)
+	for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
 	{
 		antsMove(ants, &g, helper, p);
         
@@ -631,6 +633,11 @@ int main(int argc, char** argv)
             best_explr_wg = explr_wg;
             best_explr_mod = new_explr_mod;
             finalEdges = graph_edges;
+            rounds_without_improvement = 0;
+        }
+        else
+        {
+            ++rounds_without_improvement;
         }
         
         eta = eta * p.decay;
@@ -667,7 +674,7 @@ int main(int argc, char** argv)
     
     //wg = best_explr_wg;
     
-	//cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
+	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
 
 
 	WeightedGraph best_wg; //keeps track of the best partition so far
@@ -716,10 +723,10 @@ int main(int argc, char** argv)
 					//c.reassign_communities_sigmoid(helper, cluster_tabu_list);
                     
                     
-					wg = c.rebuild_graph(finalEdges);
+					wg = c.rebuild_graph(finalEdges, g);
 					new_modularity = wg.modularity(g);
                     
-                    // we want to track the change i  n conductance value
+                    // we want to track the change in conductance value
                     // after every step in the local opt
                     calc_conductance(wg, g, new_modularity, file_no);
 
@@ -733,6 +740,9 @@ int main(int argc, char** argv)
                             
 							best_modularity = new_modularity;
 							//calc_conductance(best_wg, g, best_modularity, file_no);
+                            
+                            // FOR CHECKING IMPROVEMENT, MIGHT BE TEMPORARY
+                            decrease = 0;
 						}
 					}
 					else
@@ -763,18 +773,21 @@ int main(int argc, char** argv)
                 wg = best_wg;
 
 				//merging step
-				wg.calc_edge_total();
-				std::vector<pair<pair<int, int>, double > > fracEdges;
-				fracEdges.resize(wg.edgeTotal.size());
-				for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-				{
-					pair<int, int> edge = it->first;
-					double frac = it->second;
-					pair<pair<int, int>, double > frac_edge(edge, frac);
-					fracEdges.push_back(frac_edge);
-				}
-				std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-				wg.mergeClusters(fracEdges, p); //merge the clusters
+            
+//				wg.calc_edge_total();
+//				std::vector<pair<pair<int, int>, double > > fracEdges;
+//				fracEdges.resize(wg.edgeTotal.size());
+//				for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+//				{
+//					pair<int, int> edge = it->first;
+//					double frac = it->second;
+//					pair<pair<int, int>, double > frac_edge(edge, frac);
+//					fracEdges.push_back(frac_edge);
+//				}
+//				std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+//				wg.mergeClusters(fracEdges, p); //merge the clusters
+            
+                wg.mergeClusters(g.num_edges);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
@@ -825,7 +838,7 @@ int main(int argc, char** argv)
 							//if this cluster had been previously considered
 							if(perturb_tabu_list[i].searchList(cluster) == true)
                             {
-								cout << "Considered " << cluster << " before.\n";
+//								cout << "Considered " << cluster << " before.\n";
                                 continue; //skip
                             }
 
@@ -856,7 +869,7 @@ int main(int argc, char** argv)
 				c.reset_degrees();
 				c.recalc_degrees(finalEdges);
 
-				wg = c.rebuild_graph(finalEdges);
+				wg = c.rebuild_graph(finalEdges, g);
 				new_modularity = wg.modularity(g);
             
                 // write conductance to file
@@ -870,6 +883,9 @@ int main(int argc, char** argv)
                     best_wg = wg;
                     
 					//calc_conductance(best_wg, g, best_modularity, file_no);
+                    
+                    // For checking improvement, might be temporary
+                    round_one_decrease = 0;
 				}
 				else
 				{
@@ -891,14 +907,14 @@ int main(int argc, char** argv)
 			}
 		}
 
-		wg = c.rebuild_graph(finalEdges);
+		wg = c.rebuild_graph(finalEdges, g);
 
 		// try splitting the best_wg
 		split_clusters(wg, c, g);
 		c.reset_degrees();
 		c.recalc_degrees(finalEdges);
         
-		wg = c.rebuild_graph(finalEdges);
+		wg = c.rebuild_graph(finalEdges, g);
 		new_modularity = wg.modularity(g);
         
         // write conductance to file

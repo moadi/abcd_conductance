@@ -1,4 +1,5 @@
 #include "weighted_graph.h"
+#include <cassert>
 
 
 
@@ -201,7 +202,11 @@ void WeightedGraph::mergeNodes(int node1, int node2)
 	edges.cross_phm.erase(n1_n2);
 
 	//invalidate this vertex so we know it has been merged
-	vertex[node2].id = node1;
+//	vertex[node2].id = node1;
+    vertex[node2].id = -1;
+    
+    //update the degree sum
+    vertex[node1].degree_sum += vertex[node2].degree_sum;
 
 	//iterate over the neighbors of node2 to update the graph
 	for(auto it = vertex[node2].neighbors.begin(); it != vertex[node2].neighbors.end(); it++)
@@ -212,7 +217,7 @@ void WeightedGraph::mergeNodes(int node1, int node2)
 			continue;
 		}
 
-		//form the edge with node1 and test if that edge already exists
+		//form the edge with node1 and test if that edge already exists (node1, neighbor)
 		pair<int, int> edge;
 
 		if(*it < node1)
@@ -308,14 +313,14 @@ void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& f
 		if(vertex[node1].id == -1 || vertex[node2].id == -1)
 			continue;
 
-		if(vertex[node1].id != node1)
-		{
-			node1 = vertex[node1].id;
-		}
-		else if(vertex[node2].id != node2)
-		{
-			node2 = vertex[node2].id;
-		}
+//		if(vertex[node1].id != node1)
+//		{
+//			node1 = vertex[node1].id;
+//		}
+//		else if(vertex[node2].id != node2)
+//		{
+//			node2 = vertex[node2].id;
+//		}
 
 		double node1_frac, node2_frac; //the weight of each node is calculated
 		node1_frac = vertex[node1].weight / vertex[node1].total;
@@ -367,6 +372,69 @@ void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& f
 		}
 
 	}
+}
+
+void WeightedGraph::mergeClusters(int num_edges)
+{
+    for (int i = 0; i < num_vertices; i++)
+    {
+        // if community has been merged previously, ignore
+        if (vertex[i].id != i)
+        {
+            continue;
+        }
+        
+        // find the community to which merging has the best improvement in modularity
+        int best_comm = i; // best community default should be its own
+        double best_modularity = 0; // stores best improvement
+        
+        for (unsigned int j = 0; j < vertex[i].neighbors.size(); j++)
+        {
+            double improvement = modularity_gain(i, vertex[i].neighbors[j], num_edges);
+            if (improvement > best_modularity)
+            {
+                best_modularity = improvement;
+                best_comm = vertex[i].neighbors[j];
+            }
+        }
+        
+        // if best community is something other than the default, then merge the two communities
+        if (best_comm != i)
+        {
+            if (vertex[i].origNodes.size() >= vertex[best_comm].origNodes.size())
+            {
+                mergeNodes(i, best_comm);
+            }
+            else
+            {
+                mergeNodes(best_comm, i);
+            }
+        }
+    }
+}
+
+double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
+{
+    // create the edge to get the number of
+    // edges between node1 and node2
+    pair<int,int> edge;
+    if (node1 < node2)
+    {
+        edge = make_pair(node1, node2);
+    }
+    else
+    {
+        edge = make_pair(node2, node1);
+    }
+    auto it = edges.cross_edges.find(edge);
+    
+    assert(it != edges.cross_edges.end() && "Edge does not exist!");
+
+    double num = ((double) (vertex[node1].degree_sum * vertex[node2].degree_sum) / (2 * num_edges * num_edges));
+    
+    double delta_q = (( (double) it->second / num_edges) - num);
+    
+    return delta_q;
 }
 
 void WeightedGraph::finalize()
@@ -428,18 +496,22 @@ void WeightedGraph::displayFrac()
 double WeightedGraph::modularity(Graph& g)
 {
 	double q = 0;
-	int tot_deg;
+//	int tot_deg;
 	for(int i = 0; i < num_vertices; i++)
 	{
-		if(vertex[i].id != i || vertex[i].origNodes.size() == 0)
+		if(vertex[i].id != i)// || vertex[i].origNodes.size() == 0)
 			continue;
 
-		tot_deg = 0;
-		for(unsigned int j = 0; j < vertex[i].origNodes.size(); j++)
-		{
-			tot_deg += g.vertex[vertex[i].origNodes[j]].degree;
-		}
-		double d = (double) tot_deg / (2 * g.num_edges);
+//		tot_deg = 0;
+//		for(unsigned int j = 0; j < vertex[i].origNodes.size(); j++)
+//		{
+//			tot_deg += g.vertex[vertex[i].origNodes[j]].degree;
+//		}
+//        double d = (double) tot_deg / (2 * g.num_edges);
+
+        
+        double d = (double) vertex[i].degree_sum / (2 * g.num_edges);
+        
 		q += ( ((double) vertex[i].in_links / g.num_edges) - (pow(d, 2)));
 	}
 	return q;

@@ -43,7 +43,7 @@ class Community
 
 		void reassign_communities_sigmoid(Helper&, ClusterTabuList*);
 
-		WeightedGraph rebuild_graph(std::vector<Edge>&); //rebuild the new graph after communities have been reassigned
+		WeightedGraph rebuild_graph(std::vector<Edge>&, Graph&); //rebuild the new graph after communities have been reassigned
 
 		void recalc_degrees(std::vector<Edge>&); // recalculate the in-degree and out-degree for each node
 

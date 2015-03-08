@@ -87,7 +87,7 @@ class WeightedGraph
 
 		void copy_graph(WeightedGraph&); //used to save the best partition found so far
 
-		void finalize();
+		void finalize(int);
 
 		//void split_clusters(Graph&, Community&); // looks for well connected components within a cluster to break it up
 

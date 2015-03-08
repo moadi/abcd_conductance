@@ -74,9 +74,11 @@ void WeightedGraph::displayGraph()
 
 		communities << "Number of edges = " << edges.cross_edges.size() << "\n\n";
 
-	cout << num << endl << endl;
-//
-	cout << "Number of communities found = " << clusters << "\n\n";
+//	cout << num << endl << endl;
+
+//	cout << "Number of communities found = " << clusters << "\n\n";
+    
+    std::cout << clusters << "\n\n";
 
 	clusters = 1;
 
@@ -437,51 +439,40 @@ double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
     return delta_q;
 }
 
-void WeightedGraph::finalize()
+void WeightedGraph::finalize(int num_edges)
 {
 	for(int i = 0; i < num_vertices; i++)
-		{
-		if(vertex[i].origNodes.size() == 0)
-		{
-			continue;
-		}
-		int cluster, max_out_degree = 0;
-			for(unsigned int j = 0; j < vertex[i].neighbors.size(); j++)
-			{
-				pair<int, int> edge;
-				if(i < vertex[i].neighbors[j])
-				{
-					edge = make_pair(i, vertex[i].neighbors[j]);
-				}
-				else
-				{
-					edge = make_pair(vertex[i].neighbors[j], i);
-				}
-				auto it = edges.cross_edges.find(edge);
-				if(it == edges.cross_edges.end())
-					continue;
-				int crossing_edges = it->second;
-				if(crossing_edges > max_out_degree)
-				{
-					cluster = vertex[i].neighbors[j];
-					max_out_degree = crossing_edges;
-				}
-				if(max_out_degree > vertex[i].in_links)
-				{
-					//if node1 has more elements
-					if(vertex[i].origNodes.size() > vertex[cluster].origNodes.size())
-					{
-						mergeNodes(i, cluster);
-						cout << "Merging nodes " << i << " and " << cluster << "\n\n";
-					}
-					else //node2 has more elements
-					{
-						mergeNodes(cluster, i);
-						cout << "Merging nodes " << i << " and " << cluster << "\n\n";
-					}
-				}
-			}
-		}
+    {
+        if(vertex[i].origNodes.size() >= 1 && vertex[i].origNodes.size() <= 3)
+        {
+            // find the community to which merging has the best improvement in modularity
+            int best_comm = i; // best community default should be its own
+            double best_modularity = 0; // stores best improvement
+            
+            for (unsigned int j = 0; j < vertex[i].neighbors.size(); j++)
+            {
+                double improvement = modularity_gain(i, vertex[i].neighbors[j], num_edges);
+                if (improvement > best_modularity)
+                {
+                    best_modularity = improvement;
+                    best_comm = vertex[i].neighbors[j];
+                }
+            }
+            
+            // if best community is something other than the default, then merge the two communities
+            if (best_comm != i)
+            {
+                if (vertex[i].origNodes.size() >= vertex[best_comm].origNodes.size())
+                {
+                    mergeNodes(i, best_comm);
+                }
+                else
+                {
+                    mergeNodes(best_comm, i);
+                }
+            }
+        }
+    }
 }
 
 void WeightedGraph::displayFrac()

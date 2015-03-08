@@ -14,6 +14,7 @@ class Parameters
 		int updatePeriod; //number of cycles after which to update pheromone
 		double threshold; //sets how well connected a cluster is
 		int max_decrease; // maximum number of times the modularity drops
+        double alpha, beta;
 
 		Parameters(Graph& g)
 		{
@@ -31,6 +32,8 @@ class Parameters
 			decay = 0.95;
 			maxIterations = 25;
 			maxTries = 3;
+            alpha = 1;
+            beta = 2;
 
 			long int max_edges = ((g.num_vertices)*(g.num_vertices - 1))/2;
 			double p =  ((double) g.num_edges / max_edges) * 100;

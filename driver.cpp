@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <fstream>
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 
@@ -298,7 +299,7 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 /*Function to choose the next vertex the ant
  * should move to
  */
-int chooseNext(Ant* ant, Graph* g, Helper& helper)
+int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 {
 	unordered_map<pair<int, int>, Edge>::iterator edge_it;
 	int cur_vertex = ant->location.id; //current location of ant
@@ -306,8 +307,11 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper)
 	pair<int,int> edge;
 	int inter_size;
 	double sum = 0.0;
-	double * adjNodeFitness = new double[ant->location.degree];  //store the value for each adjacent node to the one being considered
-	for(int i=0; i < ant->location.degree; i++)  //iterate and update the values
+	
+    //store the value for each adjacent node to the one being considered
+    double * adjNodeFitness = new double[ant->location.degree];
+    
+    for(int i=0; i < ant->location.degree; i++)  //iterate and update the values
 	{
 		neighbor = ant->location.neighbors[i]; //get first neighbor
 
@@ -319,8 +323,12 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper)
 
 		inter_size = ant->location.common[i]; //get intersection size
 		edge_it = g->edges.find(edge); //get the edge
-		adjNodeFitness[i] = edge_it->second.phm + inter_size; //add the computed value to the array
-		sum += adjNodeFitness[i]; //update sum
+        
+        assert(edge_it != g->edges.end());
+		
+        //add the computed value to the array
+        adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
+        sum += adjNodeFitness[i]; //update sum
 	}
 
 	for(int i = 0; i < ant->location.degree; i++)
@@ -357,8 +365,12 @@ void updatePheromone(Graph* g)
 	for(auto edge_it = g->edges.begin(); edge_it != g->edges.end(); edge_it++)
 	{
 		edge_it->second.phm = (1.0 - eta) * edge_it->second.phm + edge_it->second.nVisited * edge_it->second.initPhm;
+        
 		if(edge_it->second.phm < 1)
 			edge_it->second.phm = 1;
+        else if(edge_it->second.phm > 100)
+            edge_it->second.phm = 100;
+        
 		edge_it->second.nVisited = 0;
 	}
 }
@@ -424,13 +436,14 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 	bool moved;
 	unordered_map<pair<int, int>, Edge>::iterator edge_it;
 	pair<int, int> edge;
-
+    
 	for(int j = 1; j <= p.maxSteps; j++)
 	{
-		if(j % p.updatePeriod == 0)
+        if(j % p.updatePeriod == 0)
 		{
 			updatePheromone(g);
 		}
+        
 		//for all ants update their positions if possible
 		for(int i = 0; i < g->num_vertices; i++)
 		{
@@ -439,11 +452,12 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 			ants[i].tabulist.addToList(cur_vertex); // add current vertex to tabu list
 			int numTries = 0;
 			moved = false;
+            
 			while(numTries < p.maxTries && !moved)
-			{
-				int next_vertex = chooseNext(&ants[i], g, helper);
-				//if the next vertex if not in the tabulist, then move the ant
+            {
+                int next_vertex = chooseNext(&ants[i], g, helper, p);
                 
+				//if the next vertex if not in the tabulist, then move the ant
                 if (next_vertex == -1)
                 {
                     std::cout << "No vertex chosen!\n\n" << std::endl;
@@ -459,7 +473,8 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 						edge_it = g->edges.find(edge);
 						if(edge_it == g->edges.end())
 						{
-							// do nothing
+                            cout << "Invalid edge in antsMove!\n";
+                            exit(EXIT_FAILURE);
 						}
 						else
 						{
@@ -472,7 +487,8 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 						edge_it = g->edges.find(edge);
 						if(edge_it == g->edges.end())
 						{
-							// do nothing
+                            cout << "Invalid edge in antsMove!\n";
+                            exit(EXIT_FAILURE);
 						}
 						else
 						{
@@ -540,9 +556,9 @@ int main(int argc, char** argv)
 
 	parse_args(argc, argv);
     
-    cout << "Preprocessing...\n\n";
+//    cout << "Preprocessing...\n\n";
 
-	cout << "Input file : " << inputFile << "\n\n";
+//	cout << "Input file : " << inputFile << "\n\n";
 
 	start = clock();
 
@@ -568,15 +584,15 @@ int main(int argc, char** argv)
 		ants[i].location = g.vertex[i];
 	}
 
-	cout << "Number of edges = " << g.num_edges << "\n\n";
+//	cout << "Number of edges = " << g.num_edges << "\n\n";
 
-	cout << "Number of vertices = " << g.num_vertices << "\n\n";
+//	cout << "Number of vertices = " << g.num_vertices << "\n\n";
 
 	Parameters p(g);
 
 	Helper helper(g);
     
-    cout << "Preprocessing time = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
+//    cout << "Preprocessing time = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
 
 
 	int file_no = 1; // used to number intermediate conductance files
@@ -589,19 +605,20 @@ int main(int argc, char** argv)
     
     unsigned int rounds_without_improvement = 0;
 
-	cout << "Exploration phase....\n\n";
+//	cout << "Exploration phase....\n\n";
     
     start = clock();
 
 	//exploration of the graph is done by the ants
 	for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
 	{
-		antsMove(ants, &g, helper, p);
+        antsMove(ants, &g, helper, p);
         
-//        if ((i+1)%5 == 0)
-//        {
+        //REMEMBER THIS IS ON!!
+        if ((i+1)%5 == 0)
+        {
             resetAnts(ants, &g, helper);
-//		}
+		}
         
         std::vector<Edge> graph_edges(g.edges.size());
         
@@ -657,12 +674,14 @@ int main(int argc, char** argv)
 //	}
 //
 //	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
-
-	/*for(int i = 0; i < finalEdges.size(); i++)
-	{
-		cout << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
-	}*/
-
+    
+//    ofstream phm_file("pheromone_levels");
+//    for(int i = 0; i < finalEdges.size(); i++)
+//	{
+//		phm_file << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
+//	}
+//    phm_file.close();
+//    exit(EXIT_SUCCESS);
 	//cout << "\n";
 
 
@@ -674,7 +693,7 @@ int main(int argc, char** argv)
     
     //wg = best_explr_wg;
     
-	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
+//	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
 
 
 	WeightedGraph best_wg; //keeps track of the best partition so far
@@ -704,7 +723,7 @@ int main(int argc, char** argv)
     /*
 	 * Begin local optimization
 	 */
-	cout << "Local optimization....\n\n";
+//	cout << "Local optimization....\n\n";
 
 	while(final_decrease < p.max_decrease)
 	{
@@ -935,24 +954,25 @@ int main(int argc, char** argv)
 		}
 	}
 
+//    best_wg.finalize(g.num_edges);
 
-	cout << "Writing to output.dat...\n\n";
+//	cout << "Writing to output.dat...\n\n";
 
 	best_wg.displayGraph();
 
-	//cout << best_wg.modularity(g) << "\n\n";
+	cout << best_wg.modularity(g) << "\n\n";
 
 	cout << helper.seed << "\n\n";
 
-	cout << "Final modularity = " << best_wg.modularity(g) << "\n\n";
+//	cout << "Final modularity = " << best_wg.modularity(g) << "\n\n";
 
-	cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
+//	cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
 
 
 
-	std::cout << "Writing final conductance to file...\n\n";
+//	std::cout << "Writing final conductance to file...\n\n";
 
-	calc_conductance(best_wg, g);
+//	calc_conductance(best_wg, g);
 
 	delete[] perturb_tabu_list;
     

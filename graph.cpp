@@ -135,9 +135,12 @@ Graph::Graph(char * fileName)
 		{
 			tot_deg += vertex[i].degree;
 		}
+        
 		num_edges = tot_deg/2;
 
-		//cout << "Average degree = " << (double) tot_deg / num_vertices << "\n\n";
+//		cout << "Average degree = " << (double) tot_deg / num_vertices << "\n\n";
+        
+//      cout << "Total degree = " << tot_deg << "\n\n";
 
 		edges.reserve(num_edges);
 

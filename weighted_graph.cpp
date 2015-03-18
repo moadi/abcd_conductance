@@ -434,7 +434,7 @@ double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
 
     double num = ((double) (vertex[node1].degree_sum * vertex[node2].degree_sum) / (2 * num_edges * num_edges));
     
-    double delta_q = (( (double) it->second / num_edges) - num);
+    double delta_q = (((double) it->second / num_edges) - num);
     
     return delta_q;
 }
@@ -490,7 +490,7 @@ double WeightedGraph::modularity(Graph& g)
 //	int tot_deg;
 	for(int i = 0; i < num_vertices; i++)
 	{
-		if(vertex[i].id != i)// || vertex[i].origNodes.size() == 0)
+		if(vertex[i].id != i )//|| vertex[i].origNodes.size() == 0)
 			continue;
 
 //		tot_deg = 0;

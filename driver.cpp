@@ -29,6 +29,8 @@ char * outputFile = NULL;
 char * inputFile = NULL;
 bool found = false; // check if clique is found
 
+
+
 void calcNeighborhoodSize(Graph*); //function to calculate intersection size for each vertex with it's neighbors
 
 void split_clusters(WeightedGraph&, Community&, Graph&);
@@ -40,6 +42,11 @@ bool check_connectivity(vector<int>&, Graph&);
 void expand_clique(WeightedGraph&, vector<int>&, Graph&, Community&, int&);
 
 void finalize(WeightedGraph&, Community&);
+
+void replace_nodes_modularity(Community&, WeightedGraph&, Graph&);
+
+double modularity_gain(int, int, int, WeightedGraph&, Graph&, Community&);
+
 
 struct greater_than_key
 {
@@ -429,7 +436,6 @@ void write_partition(char * output_file, WeightedGraph& wg, Graph& g)
 /*
  * move all
  * the ants on the graph
- * in parallel.
  */
 void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 {
@@ -709,7 +715,7 @@ int main(int argc, char** argv)
     
     
     // empty the directory where the intermediate conductance values will be stored
-    system("exec rm -r ./intermediate_conductances/*");
+//    system("exec rm -r ./intermediate_conductances/*");
 
 	//Initialize all the modularities
 	prev_modularity = wg.modularity(g);
@@ -747,7 +753,7 @@ int main(int argc, char** argv)
                     
                     // we want to track the change in conductance value
                     // after every step in the local opt
-                    calc_conductance(wg, g, new_modularity, file_no);
+//                    calc_conductance(wg, g, new_modularity, file_no);
 
 					if(new_modularity > prev_modularity)
 					{
@@ -812,7 +818,7 @@ int main(int argc, char** argv)
 				new_modularity = wg.modularity(g);
             
                 // write conductance to file
-                calc_conductance(wg, g, new_modularity, file_no);
+//                calc_conductance(wg, g, new_modularity, file_no);
             
 				if(new_modularity > best_modularity)
 				{
@@ -892,7 +898,7 @@ int main(int argc, char** argv)
 				new_modularity = wg.modularity(g);
             
                 // write conductance to file
-                calc_conductance(wg, g, new_modularity, file_no);
+//                calc_conductance(wg, g, new_modularity, file_no);
 
 				// check for improvement
 				if(new_modularity > best_modularity) // just change to check
@@ -929,24 +935,29 @@ int main(int argc, char** argv)
 		wg = c.rebuild_graph(finalEdges, g);
 
 		// try splitting the best_wg
-		split_clusters(wg, c, g);
+//		split_clusters(wg, c, g);
+        
+        replace_nodes_modularity(c, wg, g);
+        
+        
 		c.reset_degrees();
 		c.recalc_degrees(finalEdges);
-        
 		wg = c.rebuild_graph(finalEdges, g);
+        
 		new_modularity = wg.modularity(g);
         
         // write conductance to file
-        calc_conductance(wg, g, new_modularity, file_no);
+//        calc_conductance(wg, g, new_modularity, file_no);
 
 		// check if splitting improves the solution
 		if(new_modularity > best_modularity)
 		{
-			//best_wg = c.rebuild_graph(finalEdges);
-            best_wg = wg;
+			best_wg = c.rebuild_graph(finalEdges, g);
+            //best_wg = wg;
             
 			best_modularity = new_modularity;
 			//calc_conductance(best_wg, g, best_modularity, file_no);
+//            std::cout << "Improvement after replacing!\n\n";
 		}
 		else
 		{
@@ -1409,4 +1420,103 @@ void calcNeighborhoodSize(Graph* graph)
 			intersection.clear();
 		}
 	}
+}
+
+double modularity_gain(int node, int community, int out_degree, WeightedGraph& wg, Graph& g, Community& c)
+{
+    double a = (double)(out_degree - c.in_degree[node])/g.num_edges;
+//    std::cout << a << "\n";
+//    std::cout << g.vertex[node].degree << " " << wg.vertex[c.n2c[community]].degree_sum << " "
+//            << wg.vertex[c.n2c[node]].degree_sum << "\n";
+//    int m_C = wg.vertex[c.n2c[node]].in_links;
+//    int m_D = wg.vertex[community].in_links;
+//    int d = g.vertex[node].degree;
+    
+    int degree_C = wg.vertex[c.n2c[node]].degree_sum;
+    int degree_D = wg.vertex[community].degree_sum;
+    int d = g.vertex[node].degree;
+    
+    int b = (d + degree_D - degree_C)*d;
+    
+//    int b = (m_C - m_D - d) * d;
+    
+//    std::cout << b << "\n";
+    double denom = 2*g.num_edges*g.num_edges;
+//    std::cout << denom << "\n";
+//    std::cout << (double) b/denom << "\n\n\n";
+    
+//    long denom = 4*g.num_edges*g.num_edges;
+//    long b = 2 * (g.vertex[node].degree*wg.vertex[c.n2c[community]].degree_sum - g.vertex[node].degree*(wg.vertex[c.n2c[node]].degree_sum-g.vertex[node].degree));
+    
+    return a-((double) b/denom);
+}
+
+void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g)
+{
+    // idea here is to consider each node
+    // and check the gain in modularity by
+    // removing it from its current community
+    // and placing it into a neighboring community.
+    // replace only if gain is positive
+    
+    for(int i = 0; i < g.num_vertices; ++i)
+    {
+        // default one is the current community
+        int best_comm = c.n2c[i];
+        
+        int curr_comm = c.n2c[i];
+        double best_gain = 0;
+        int best_outdegree = 0;
+        
+        // iterate over each community this node is connected to
+        // and find the best community to place this node to
+        for (auto it = c.out_degree[i].begin(); it != c.out_degree[i].end(); ++it)
+        {
+            int community = it->first;
+            int out_degree = it->second;
+            double delta_q = modularity_gain(i, community, out_degree, wg, g, c);
+            if (delta_q > best_gain)
+            {
+                best_gain = delta_q;
+                best_comm = community;
+                best_outdegree = out_degree;
+//                std::cout << "Positive gain in " << __FUNCTION__ << " " << delta_q << "\n";
+            }
+        }
+        
+        // if the best community is something other than the default
+        // then change
+        if (best_comm != curr_comm)
+        {
+            assert(wg.vertex[best_comm].id == best_comm);
+            
+//            std::cout << "Placing node " << i+1 << " in community " << best_comm << " with increase = " << best_gain << "\n";
+            
+//            wg.vertex[curr_comm].origNodes.erase(std::remove(wg.vertex[curr_comm].origNodes.begin(), wg.vertex[curr_comm].origNodes.end(), i), wg.vertex[curr_comm].origNodes.end());
+//            
+//            wg.vertex[curr_comm].in_links -= c.in_degree[i];
+            
+            c.n2c[i] = best_comm;
+            
+//            wg.vertex[best_comm].origNodes.push_back(i);
+//            wg.vertex[best_comm].in_links += best_outdegree;
+            
+            
+            //update all neighbors of this node
+//            for (int j=0; j < g.vertex[i].degree; ++j)
+//            {
+//                int neighbor = g.vertex[i].neighbors[j];
+//                --c.in_degree[neighbor];
+//                auto it_out_degree = c.out_degree[neighbor].find(best_comm);
+//                if (it_out_degree == c.out_degree[neighbor].end())
+//                {
+//                    c.out_degree[neighbor].insert(make_pair(best_comm, 1));
+//                }
+//                else
+//                {
+//                    ++it_out_degree->second;
+//                }
+//            }
+        }
+    }
 }

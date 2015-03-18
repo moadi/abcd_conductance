@@ -43,7 +43,7 @@ void expand_clique(WeightedGraph&, vector<int>&, Graph&, Community&, int&);
 
 void finalize(WeightedGraph&, Community&);
 
-void replace_nodes_modularity(Community&, WeightedGraph&, Graph&);
+void replace_nodes_modularity(Community&, WeightedGraph&, Graph&, std::vector<Edge>&);
 
 double modularity_gain(int, int, int, WeightedGraph&, Graph&, Community&);
 
@@ -937,12 +937,12 @@ int main(int argc, char** argv)
 		// try splitting the best_wg
 //		split_clusters(wg, c, g);
         
-        replace_nodes_modularity(c, wg, g);
+        replace_nodes_modularity(c, wg, g, finalEdges);
         
         
-		c.reset_degrees();
-		c.recalc_degrees(finalEdges);
-		wg = c.rebuild_graph(finalEdges, g);
+//		c.reset_degrees();
+//		c.recalc_degrees(finalEdges);
+//		wg = c.rebuild_graph(finalEdges, g);
         
 		new_modularity = wg.modularity(g);
         
@@ -952,8 +952,8 @@ int main(int argc, char** argv)
 		// check if splitting improves the solution
 		if(new_modularity > best_modularity)
 		{
-			best_wg = c.rebuild_graph(finalEdges, g);
-            //best_wg = wg;
+			//best_wg = c.rebuild_graph(finalEdges, g);
+            best_wg = wg;
             
 			best_modularity = new_modularity;
 			//calc_conductance(best_wg, g, best_modularity, file_no);
@@ -1436,7 +1436,7 @@ double modularity_gain(int node, int community, int out_degree, WeightedGraph& w
     int degree_D = wg.vertex[community].degree_sum;
     int d = g.vertex[node].degree;
     
-    int b = (d + degree_D - degree_C)*d;
+    long long b = (d + degree_D - degree_C)*d;
     
 //    int b = (m_C - m_D - d) * d;
     
@@ -1451,7 +1451,7 @@ double modularity_gain(int node, int community, int out_degree, WeightedGraph& w
     return a-((double) b/denom);
 }
 
-void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g)
+void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g, std::vector<Edge>& finalEdges)
 {
     // idea here is to consider each node
     // and check the gain in modularity by
@@ -1497,6 +1497,9 @@ void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g)
 //            wg.vertex[curr_comm].in_links -= c.in_degree[i];
             
             c.n2c[i] = best_comm;
+            c.reset_degrees();
+            c.recalc_degrees(finalEdges);
+            wg = c.rebuild_graph(finalEdges, g);
             
 //            wg.vertex[best_comm].origNodes.push_back(i);
 //            wg.vertex[best_comm].in_links += best_outdegree;

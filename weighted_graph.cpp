@@ -47,7 +47,7 @@ void WeightedGraph::displayGraph()
 			num++;
 		}
 		communities << "\n";
-		communities << " [ " << vertex[i].weight << " , " << vertex[i].in_links << ", " << vertex[i].total << " ]  ";
+		communities << " [ " << vertex[i].degree_sum << " , " << vertex[i].in_links << "  ]    ";
 		communities << "Degree of vertex = " << vertex[i].degree << "\n";
 		communities << "Vertex is connected to clusters with phm: \n";
 		pair<int, int> edge;
@@ -490,7 +490,7 @@ double WeightedGraph::modularity(Graph& g)
 //	int tot_deg;
 	for(int i = 0; i < num_vertices; i++)
 	{
-		if(vertex[i].id != i )//|| vertex[i].origNodes.size() == 0)
+		if(vertex[i].id != i || vertex[i].origNodes.size() == 0)
 			continue;
 
 //		tot_deg = 0;

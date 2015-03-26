@@ -95,26 +95,28 @@ Graph::Graph(char * fileName)
 			vertex[i].id = i;
 			vertex[i].degree = 0;
 		}
+        int vertex_counter = 0;
 		//Read vertex IDs
 		do
 		{
 			getline(fin, line);
-			string id_text;
+//			string id_text;
 			if(string::npos != line.find("Edges") || string::npos != line.find("Arcs"))
 				break;
-			/*int start_pos = line.find("\"");
-			int id;
-			if (string::npos != start_pos)
-			{
-				++start_pos;
-				int i;
-				for(i = start_pos; line[i] != '\"'; i++);
-				id_text = line.substr(start_pos, i - start_pos);
-				id = atoi(id_text.c_str());
-				id--;
-				vertex[id].id = id;
-				vertex[id].degree = 0;
-			}*/
+//            std::string::size_type start_pos = line.find("\"");
+//			int id;
+//			if (string::npos != start_pos)
+//			{
+//				++start_pos;
+//                std::string::size_type i;
+//				for(i = start_pos; line[i] != '\"'; i++);
+//				id_text = line.substr(start_pos, i - start_pos);
+//				id = atoi(id_text.c_str());
+//                vertex[vertex_counter++].node_id = id;
+//				id--;
+//				vertex[id].id = id;
+//				vertex[id].degree = 0;
+//			}
 		}
 		while(!fin.eof());
 

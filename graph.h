@@ -59,6 +59,7 @@ class Vertex
 		int degree; //degree of each vertex
 		int * neighbors; //set of 1-hop neighbors of this vertex
 		int * common; //intersection size with each neighbor of this vertex
+//        int node_id; //stores the node id (which can be different from the id above)
 
 //		std::vector<int> neighbors;
 //		std::vector<int> common;

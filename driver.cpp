@@ -590,9 +590,9 @@ int main(int argc, char** argv)
 		ants[i].location = g.vertex[i];
 	}
 
-	cout << "Number of edges = " << g.num_edges << "\n\n";
-
-	cout << "Number of vertices = " << g.num_vertices << "\n\n";
+//	cout << "Number of edges = " << g.num_edges << "\n\n";
+//
+//	cout << "Number of vertices = " << g.num_vertices << "\n\n";
     
 	Parameters p(g);
 
@@ -692,12 +692,12 @@ int main(int argc, char** argv)
 
 	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
-    ofstream phm_file("pheromone_levels");
-    for(int i = 0; i < finalEdges.size(); i++)
-	{
-		phm_file << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
-	}
-    phm_file.close();
+//    ofstream phm_file("pheromone_levels");
+//    for(int i = 0; i < finalEdges.size(); i++)
+//	{
+//		phm_file << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
+//	}
+//    phm_file.close();
 //    exit(EXIT_SUCCESS);
 	//cout << "\n";
 
@@ -835,7 +835,9 @@ int main(int argc, char** argv)
             
 				if(new_modularity > best_modularity)
 				{
-					//change cluster assignments to wg as it's better
+					std::cout << "Improvement after merging!\n\n";
+                    
+                    //change cluster assignments to wg as it's better
 					for(int i = 0; i < wg.num_vertices; i++)
 					{
 						if((wg.vertex[i].id != i) || (wg.vertex[i].origNodes.size() == 0))
@@ -972,9 +974,7 @@ int main(int argc, char** argv)
             
 			best_modularity = new_modularity;
             
-            std::cout << "Modularity increased to " << best_modularity << "\n\n";
-			//calc_conductance(best_wg, g, best_modularity, file_no);
-//            std::cout << "Improvement after replacing!\n\n";
+            //calc_conductance(best_wg, g, best_modularity, file_no);
 		}
 		else
 		{
@@ -987,7 +987,7 @@ int main(int argc, char** argv)
 //	cout << "Writing to output.dat...\n\n";
     
     
-    cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
+//    cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
 
 	best_wg.displayGraph();
 

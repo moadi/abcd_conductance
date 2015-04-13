@@ -2,7 +2,6 @@
 #include <cassert>
 
 
-
 /*WeightedGraph::WeightedGraph(int num_vertices, std::unordered_map<pair<int, int>, double >* out_phm, std::unordered_map<pair<int, int>, int >* edges_cross)
 {
 	this->num_vertices = num_vertices;
@@ -431,10 +430,16 @@ double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
     auto it = edges.cross_edges.find(edge);
     
     assert(it != edges.cross_edges.end() && "Edge does not exist!");
-
-    double num = ((double) (vertex[node1].degree_sum * vertex[node2].degree_sum) / (2 * num_edges * num_edges));
     
-    double delta_q = (((double) it->second / num_edges) - num);
+    long long denom = (long long) 2 * num_edges * num_edges;
+    
+    long long num = (long long) vertex[node1].degree_sum * vertex[node2].degree_sum;
+
+    long double a = (long double) num / denom;
+    
+    assert(a > 0);
+    
+    double delta_q = (((double) it->second / num_edges) - a);
     
     return delta_q;
 }

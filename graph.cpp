@@ -165,8 +165,8 @@ Graph::Graph(char * fileName)
 		int * count = new int[num_vertices]();
 		while (fin >> source >> target)
 		{
-			source--;
-			target--;
+			--source;
+			--target;
 			pair<int, int> edge_key;
 			Edge edge;
 			if(source < target)
@@ -384,6 +384,28 @@ Graph::Graph(char * fileName)
 		delete[] count;
 		fin.close();
 	}
+}
+
+void Graph::build_neighb_edges()
+{
+    for (int i = 0; i < num_vertices; ++i)
+    {
+        vertex[i].neighb_edge.reserve(vertex[i].degree);
+        for (int j = 0; j < vertex[i].degree; ++j)
+        {
+            std::pair<int, int> edge;
+            if (i < vertex[i].neighbors[j])
+            {
+                edge = std::make_pair(i, vertex[i].neighbors[j]);
+            }
+            else
+            {
+                edge = std::make_pair(vertex[i].neighbors[j], i);
+            }
+            auto it = edges.find(edge);
+            vertex[i].neighb_edge[j] = &(it->second);
+        }
+    }
 }
 
 Graph::~Graph()

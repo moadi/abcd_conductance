@@ -320,28 +320,30 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
     
     for(int i=0; i < ant->location.degree; i++)  //iterate and update the values
 	{
-		neighbor = ant->location.neighbors[i]; //get first neighbor
-
-		//make the edge pair to look up hashtable later
-		if (cur_vertex < neighbor)
-			edge = make_pair(cur_vertex, neighbor);
-		else
-			edge = make_pair(neighbor, cur_vertex);
-
-		inter_size = ant->location.common[i]; //get intersection size
-		edge_it = g->edges.find(edge); //get the edge
-        
-        assert(edge_it != g->edges.end());
-		
-        //add the computed value to the array
-        adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
+//		neighbor = ant->location.neighbors[i]; //get first neighbor
+//
+//		//make the edge pair to look up hashtable later
+//		if (cur_vertex < neighbor)
+//			edge = make_pair(cur_vertex, neighbor);
+//		else
+//			edge = make_pair(neighbor, cur_vertex);
+//
+//		inter_size = ant->location.common[i]; //get intersection size
+//		edge_it = g->edges.find(edge); //get the edge
+//        
+//        assert(edge_it != g->edges.end());
+//		
+//        //add the computed value to the array
+//        adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
+        adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
+                            ((double) p.beta * inter_size);
         sum += adjNodeFitness[i]; //update sum
 	}
 
-	for(int i = 0; i < ant->location.degree; i++)
-	{
-		adjNodeFitness[i] = adjNodeFitness[i]/sum;
-	}
+//	for(int i = 0; i < ant->location.degree; i++)
+//	{
+//		adjNodeFitness[i] = adjNodeFitness[i]/sum;
+//	}
 
 	//Generate a random number uniformly distributed in the range [0,1)
 	double decision = helper.randomNumber();
@@ -352,7 +354,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 	bool chosen = false;
 	for(int i=0; i < ant->location.degree && !chosen; i++)
 	{
-		fitness += adjNodeFitness[i];
+		fitness += (adjNodeFitness[i] / sum);
 		if(fitness > decision)
 		{
 			vertex = ant->location.neighbors[i];
@@ -445,6 +447,7 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
     
 	for(int j = 1; j <= p.maxSteps; j++)
 	{
+        clock_t start = clock();
         if(j % p.updatePeriod == 0)
 		{
 			updatePheromone(g);
@@ -458,6 +461,10 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 			ants[i].tabulist.addToList(cur_vertex); // add current vertex to tabu list
 			int numTries = 0;
 			moved = false;
+            
+//            clock_t start;
+//            if (g->vertex[i].degree == 1)
+//                start = clock();
             
 			while(numTries < p.maxTries && !moved)
             {
@@ -505,7 +512,10 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 				else
 					numTries++;
 			}
+//            if (g->vertex[i].degree == 1)
+//                std::cout << "Time for vertex " << i << " = " << (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n";
 		}
+        std::cout << "\nTime for step " << j << " = " << (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n";
 	}
 }
 
@@ -583,6 +593,13 @@ int main(int argc, char** argv)
 	//cout << "Completed...\n\n";
 	//create the ants and place them on the graph
 	Ant * ants = new Ant[g.num_vertices];
+    
+    if (!ants)
+    {
+        std::cerr << "Unable to allocate memory for ants!\n\n";
+        exit(EXIT_FAILURE);
+    }
+    
 	//std::vector<Ant> ants(g.num_vertices);
 
 	for(int i = 0; i < g.num_vertices; i++)
@@ -590,13 +607,15 @@ int main(int argc, char** argv)
 		ants[i].location = g.vertex[i];
 	}
 
-//	cout << "Number of edges = " << g.num_edges << "\n\n";
-//
-//	cout << "Number of vertices = " << g.num_vertices << "\n\n";
+	cout << "Number of edges = " << g.num_edges << "\n\n";
+
+	cout << "Number of vertices = " << g.num_vertices << "\n\n";
     
 	Parameters p(g);
 
 	Helper helper(g);
+    
+    g.build_neighb_edges();
     
 //    cout << "Preprocessing time = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
 
@@ -835,8 +854,6 @@ int main(int argc, char** argv)
             
 				if(new_modularity > best_modularity)
 				{
-					std::cout << "Improvement after merging!\n\n";
-                    
                     //change cluster assignments to wg as it's better
 					for(int i = 0; i < wg.num_vertices; i++)
 					{
@@ -1332,7 +1349,7 @@ void finalize(WeightedGraph& wg, Community& c)
 
 		else if(wg.vertex[i].origNodes.size() == 2)
 		{
-			int max_out_degree = 0, cluster, smallest_cluster = 999999;
+			int max_out_degree = 0, cluster = -1, smallest_cluster = 999999;
 
 			for(unsigned int j = 0; j < wg.vertex[i].neighbors.size(); ++j)
 			{
@@ -1451,7 +1468,7 @@ double modularity_gain(int node, int community, int out_degree, WeightedGraph& w
     int d = g.vertex[node].degree;
     long long b = (long long) (d + degree_D - degree_C)*d;
     
-    long long denom = (long long) 2 * g.num_edges * g.num_edges;
+    unsigned long long denom = (unsigned long long) 2 * g.num_edges * g.num_edges;
     return a-((double) b/denom);
 }
 

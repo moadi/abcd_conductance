@@ -263,6 +263,10 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 			total_crossing_edges += cross_edges_it->second;
 		}
 		conductance = ( (double) total_crossing_edges / community_degree);
+        if (conductance == 0)
+        {
+            continue;
+        }
 		conductance_pair = make_pair(wg.vertex[i].origNodes.size(), conductance);
 		conductances.push_back(conductance_pair);
 	}

@@ -28,6 +28,7 @@ double minPhm = 1;
 char * outputFile = NULL;
 char * inputFile = NULL;
 bool found = false; // check if clique is found
+unsigned long seed = 0;
 
 
 
@@ -320,7 +321,8 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
     
     for(int i=0; i < ant->location.degree; i++)  //iterate and update the values
 	{
-//		neighbor = ant->location.neighbors[i]; //get first neighbor
+        inter_size = ant->location.common[i]; //get intersection size
+//        neighbor = ant->location.neighbors[i]; //get first neighbor
 //
 //		//make the edge pair to look up hashtable later
 //		if (cur_vertex < neighbor)
@@ -328,7 +330,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //		else
 //			edge = make_pair(neighbor, cur_vertex);
 //
-//		inter_size = ant->location.common[i]; //get intersection size
+//
 //		edge_it = g->edges.find(edge); //get the edge
 //        
 //        assert(edge_it != g->edges.end());
@@ -549,6 +551,10 @@ void parse_args(int argc, char** argv)
 					outputFile = argv[i+1];
 					i++;
 					break;
+                case 's':
+                    seed = std::stoul(argv[i+1], nullptr, 0);
+                    ++i;
+                    break;
 				default:
 					usage(argv[0], "Incorrect options");
 					break;
@@ -612,8 +618,8 @@ int main(int argc, char** argv)
 	cout << "Number of vertices = " << g.num_vertices << "\n\n";
     
 	Parameters p(g);
-
-	Helper helper(g);
+    
+	Helper helper(g, seed);
     
     g.build_neighb_edges();
     

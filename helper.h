@@ -13,29 +13,36 @@ class Helper
 		int num_vertices;
 		unsigned long seed;
 
-		Helper(Graph& graph)
+		Helper(Graph& graph, unsigned long in_seed)
 		{
-			seed = rd();
-//			seed = 3915755596;
+            if (in_seed == 0)
+            {
+                seed = rd();
+            }
+            else
+            {
+                seed = in_seed;
+            }
+//			seed = 425624331;
 			gen.seed(seed);
 			num_vertices = graph.num_vertices;
 		}
 
-		inline double randomNumber()
+        double randomNumber()
 		{
 			std::uniform_real_distribution<> random(0, 1);
 			double decision = random(gen);
 			return decision;
 		}
 
-		inline double probability()
+        double probability()
 		{
 			std::uniform_real_distribution<> reset(0,1);
 			double val = reset(gen);
 			return val;
 		}
 
-		inline int newVertex()
+        int newVertex()
 		{
 			std::uniform_int_distribution<> vertex(0, num_vertices - 1);
 			int vert = vertex(gen);

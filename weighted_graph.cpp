@@ -431,9 +431,9 @@ double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
     
     assert(it != edges.cross_edges.end() && "Edge does not exist!");
     
-    long long denom = (long long) 2 * num_edges * num_edges;
+    unsigned long long denom = (unsigned long long) 2 * num_edges * num_edges;
     
-    long long num = (long long) vertex[node1].degree_sum * vertex[node2].degree_sum;
+    unsigned long long num = (unsigned long long) vertex[node1].degree_sum * vertex[node2].degree_sum;
 
     long double a = (long double) num / denom;
     

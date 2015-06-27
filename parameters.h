@@ -34,9 +34,13 @@ class Parameters
 			maxTries = 3;
             alpha = 1;
             beta = 2;
-
-			long int max_edges = ((g.num_vertices)*(g.num_vertices - 1))/2;
+            
+            // Better to use a static_cast<>() instead of C style casts 
+            unsigned long long a = (unsigned long long) g.num_vertices * (g.num_vertices-1);
+            unsigned long long max_edges = (unsigned long long) a/2;
 			double p =  ((double) g.num_edges / max_edges) * 100;
+//            double p =  ((double) g.num_edges / max_edges);
+//            std::cout << p << "\n\n";
 			//cout << "Percentage of links = " << p << "\n\n";
 			if (p < 0.100)
 			{

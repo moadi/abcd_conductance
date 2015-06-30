@@ -195,7 +195,6 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
     }
     std_dev = sqrt((squared_sum) / conductances.size());
     
-
 	fout << "Current modularity = " << modularity << "\n\n\n";
     
     fout << "Mean = " << mean << "\n\n\n";
@@ -232,6 +231,8 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 	pair<int, double> conductance_pair;
 
 	double conductance;
+    double min_conductance = 99.0;
+    double max_conductance = 0;
 
 	for(int i = 0; i < wg.num_vertices; i++)
 	{
@@ -267,6 +268,14 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
         {
             continue;
         }
+        if (conductance < min_conductance)
+        {
+            min_conductance = conductance;
+        }
+        if (conductance > max_conductance)
+        {
+            max_conductance = conductance;
+        }
 		conductance_pair = make_pair(wg.vertex[i].origNodes.size(), conductance);
 		conductances.push_back(conductance_pair);
 	}
@@ -292,11 +301,19 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
     }
     std_dev = sqrt((squared_sum) / conductances.size());
     
-    fout << "Final modularity = " << wg.modularity(g) << "\n\n\n";
+    double cv = (std_dev / mean) * 100;
     
-    fout << "Mean = " << mean << "\n\n\n";
+    fout << "Modularity: " << wg.modularity(g) << "\n";
     
-    fout << "Standard deviation = " << std_dev << "\n\n\n";
+    fout << "Minimum: " << min_conductance << "\n";
+    
+    fout << "Maximum: " << max_conductance << "\n";
+    
+    fout << "Mean: " << mean << "\n";
+    
+    fout << "Stddev: " << std_dev << "\n";
+    
+    fout << "CV: " << cv << "\n\n";
     
     fout << "Community size" << "\t\t\t" << "Conductance\n";
 
@@ -305,6 +322,7 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 		fout << conductances[i].first << "\t\t\t" << conductances[i].second << "\n";
 	}
 	fout.close();
+    std::cout << mean << "\n\n";
 }
 
 
@@ -521,7 +539,7 @@ void antsMove(Ant* ants, Graph * g, Helper& helper, Parameters& p)
 //            if (g->vertex[i].degree == 1)
 //                std::cout << "Time for vertex " << i << " = " << (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n";
 		}
-        std::cout << "\nTime for step " << j << " = " << (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n";
+//        std::cout << "\nTime for step " << j << " = " << (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n";
 	}
 }
 
@@ -617,9 +635,9 @@ int main(int argc, char** argv)
 		ants[i].location = g.vertex[i];
 	}
 
-	cout << "Number of edges = " << g.num_edges << "\n\n";
-
-	cout << "Number of vertices = " << g.num_vertices << "\n\n";
+//	cout << "Number of edges = " << g.num_edges << "\n\n";
+//
+//	cout << "Number of vertices = " << g.num_vertices << "\n\n";
     
 	Parameters p(g);
     

@@ -212,7 +212,9 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file
 }
 
 
-void calc_conductance(WeightedGraph& wg, Graph& g)
+void calc_conductance(WeightedGraph& wg, Graph& g, double& avg_cond, double& min_cond, double& max_cond,
+                                                   double& std_deviation, double& c_v,
+                                                   int& min_cond_size, int& max_cond_size)
 {
 	// If D is the sum of the degrees on the nodes in community C
 	// and E is the number of edges lying inside community C
@@ -271,10 +273,12 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
         if (conductance < min_conductance)
         {
             min_conductance = conductance;
+            min_cond_size = wg.vertex[i].origNodes.size();
         }
         if (conductance > max_conductance)
         {
             max_conductance = conductance;
+            max_cond_size = wg.vertex[i].origNodes.size();
         }
 		conductance_pair = make_pair(wg.vertex[i].origNodes.size(), conductance);
 		conductances.push_back(conductance_pair);
@@ -322,7 +326,12 @@ void calc_conductance(WeightedGraph& wg, Graph& g)
 		fout << conductances[i].first << "\t\t\t" << conductances[i].second << "\n";
 	}
 	fout.close();
-    std::cout << mean << "\n\n";
+//    std::cout << mean << "\n\n";
+    avg_cond = mean;
+    min_cond = min_conductance;
+    max_cond = max_conductance;
+    std_deviation = std_dev;
+    c_v = cv;
 }
 
 
@@ -1026,6 +1035,10 @@ int main(int argc, char** argv)
 			++final_decrease;
 		}
 	}
+    
+    // conductance stats
+    int max_cond_size, min_cond_size;
+    double avg_cond, min_cond, max_cond, std_dev, cv;
 
 //    best_wg.finalize(g.num_edges);
 
@@ -1034,12 +1047,21 @@ int main(int argc, char** argv)
     
 //    cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
 
-	best_wg.displayGraph();
+    std::cout << helper.seed << "\n\n";
+    
+    best_wg.displayGraph();
+    calc_conductance(best_wg, g, avg_cond, min_cond, max_cond, std_dev, cv, min_cond_size, max_cond_size);
 
-	cout << best_wg.modularity(g) << "\n\n";
+    std::cout << best_wg.modularity(g) << "\n\n";
+    std::cout << avg_cond << "\n\n";
+    std::cout << min_cond << "\n\n";
+    std::cout << min_cond_size << "\n\n";
+    std::cout << max_cond << "\n\n";
+    std::cout << max_cond_size << "\n\n";
+    std::cout << std_dev << "\n\n";
+    std::cout << cv << "\n\n";
 
-	cout << helper.seed << "\n\n";
-
+    
 //	cout << "Final modularity = " << best_wg.modularity(g) << "\n\n";
 
 //	cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
@@ -1047,8 +1069,6 @@ int main(int argc, char** argv)
 
 
 //	std::cout << "Writing final conductance to file...\n\n";
-
-	calc_conductance(best_wg, g);
 
 	delete[] perturb_tabu_list;
     

@@ -31,7 +31,6 @@ bool found = false; // check if clique is found
 unsigned long seed = 0;
 
 
-
 void calcNeighborhoodSize(Graph*); //function to calculate intersection size for each vertex with it's neighbors
 
 void split_clusters(WeightedGraph&, Community&, Graph&);
@@ -106,16 +105,10 @@ void resetAnts(Ant* ants, Graph * graph, Helper &helper)
 }
 
 
-
-
-
-
-
 /*
  * Function to calculate the conductance each cluster in the final graph
  *
  */
-
 
 void calc_conductance(WeightedGraph& wg, Graph& g, double& modularity, int& file_no)
 {
@@ -301,7 +294,8 @@ void calc_conductance(WeightedGraph& wg, Graph& g, double& avg_cond, double& min
     
     for (int i = 0; i < conductances.size(); i++)
     {
-        squared_sum += std::pow((mean - conductances[i].second), 2);
+        squared_sum += std::pow((conductances[i].second - mean), 2);
+//        squared_sum += std::pow((mean - conductances[i].second), 2);
     }
     std_dev = sqrt((squared_sum) / conductances.size());
     

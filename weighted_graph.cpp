@@ -77,7 +77,7 @@ void WeightedGraph::displayGraph()
 
 //	cout << "Number of communities found = " << clusters << "\n\n";
     
-    std::cout << clusters << "\n\n";
+    std::cout << clusters << "\n";
 
 	clusters = 1;
 

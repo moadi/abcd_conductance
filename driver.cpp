@@ -639,7 +639,7 @@ int main(int argc, char** argv)
 	}
 
 //	cout << "Number of edges = " << g.num_edges << "\n\n";
-//
+
 //	cout << "Number of vertices = " << g.num_vertices << "\n\n";
     
 	Parameters p(g);
@@ -731,7 +731,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	//cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
+//	cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
 
 //	std::vector<Edge> finalEdges;
 //
@@ -793,6 +793,8 @@ int main(int argc, char** argv)
 	 * Begin local optimization
 	 */
 //	cout << "Local optimization....\n\n";
+
+    start = clock();
 
 	while(final_decrease < p.max_decrease)
 	{
@@ -862,20 +864,20 @@ int main(int argc, char** argv)
 
 				//merging step
             
-//				wg.calc_edge_total();
-//				std::vector<pair<pair<int, int>, double > > fracEdges;
-//				fracEdges.resize(wg.edgeTotal.size());
-//				for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//				{
-//					pair<int, int> edge = it->first;
-//					double frac = it->second;
-//					pair<pair<int, int>, double > frac_edge(edge, frac);
-//					fracEdges.push_back(frac_edge);
-//				}
-//				std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//				wg.mergeClusters(fracEdges, p); //merge the clusters
+//			wg.calc_edge_total();
+//			std::vector<pair<pair<int, int>, double > > fracEdges;
+//			fracEdges.resize(wg.edgeTotal.size());
+//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+//			{
+//				pair<int, int> edge = it->first;
+//				double frac = it->second;
+//				pair<pair<int, int>, double > frac_edge(edge, frac);
+//				fracEdges.push_back(frac_edge);
+//			}
+//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+//			wg.mergeClusters(fracEdges, p); //merge the clusters
             
-                wg.mergeClusters(g.num_edges);
+             wg.mergeClusters(g.num_edges);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
@@ -1030,6 +1032,7 @@ int main(int argc, char** argv)
 		}
 	}
     
+    auto time_taken = (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000);
     // conductance stats
     int max_cond_size, min_cond_size;
     double avg_cond, min_cond, max_cond, std_dev, cv;
@@ -1041,20 +1044,22 @@ int main(int argc, char** argv)
     
 //    cout << "Running time = " << (clock() - start)/ (double)(CLOCKS_PER_SEC) << " s \n\n";
 
-    std::cout << helper.seed << "\n\n";
+    std::cout << helper.seed << "\n";
     
-    best_wg.displayGraph();
     calc_conductance(best_wg, g, avg_cond, min_cond, max_cond, std_dev, cv, min_cond_size, max_cond_size);
 
-    std::cout << best_wg.modularity(g) << "\n\n";
-    std::cout << avg_cond << "\n\n";
-    std::cout << min_cond << "\n\n";
-    std::cout << min_cond_size << "\n\n";
-    std::cout << max_cond << "\n\n";
-    std::cout << max_cond_size << "\n\n";
-    std::cout << std_dev << "\n\n";
-    std::cout << cv << "\n\n";
+    std::cout << best_wg.modularity(g) << "\n";
+    std::cout << avg_cond << "\n";
+    std::cout << min_cond << "\n";
+    std::cout << min_cond_size << "\n";
+    std::cout << max_cond << "\n";
+    std::cout << max_cond_size << "\n";
+    std::cout << std_dev << "\n";
+    std::cout << cv << "\n";
 
+    best_wg.displayGraph();
+
+    std::cout << time_taken << "\n";
     
 //	cout << "Final modularity = " << best_wg.modularity(g) << "\n\n";
 

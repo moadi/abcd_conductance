@@ -794,8 +794,6 @@ int main(int argc, char** argv)
 	 */
 //	cout << "Local optimization....\n\n";
 
-    start = clock();
-
 	while(final_decrease < p.max_decrease)
 	{
 		while(round_one_decrease < p.max_decrease)

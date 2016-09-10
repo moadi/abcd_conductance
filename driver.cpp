@@ -674,10 +674,10 @@ int main(int argc, char** argv)
 
 //	cout << "Exploration phase....\n\n";
     
-    start = clock();
+//    start = clock();
 
 	//exploration of the graph is done by the ants
-	for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
+	/*for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
 	{
         antsMove(ants, &g, helper, p);
         
@@ -685,7 +685,7 @@ int main(int argc, char** argv)
         if ((i+1)%5 == 0)
         {
             resetAnts(ants, &g, helper);
-		}
+        }
         
         std::vector<Edge> graph_edges(g.edges.size());
         
@@ -729,7 +729,7 @@ int main(int argc, char** argv)
 		{
 			eta = 0.02;
 		}
-	}
+	}*/
 
 //	cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
 
@@ -739,6 +739,18 @@ int main(int argc, char** argv)
 //	{
 //		finalEdges.push_back(it->second);
 //	}
+  
+  /*
+   * If we are skipping exploration phase!
+   */
+  uint64_t edge_num = 0;
+  for(auto it = g.edges.begin(); it != g.edges.end(); it++)
+  {
+    it->second.phm = helper.randomPhm();
+    finalEdges[edge_num] = it->second;
+    ++edge_num;
+  }
+
 
 	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
@@ -753,7 +765,9 @@ int main(int argc, char** argv)
 
 
 
-    Community c(g);
+  Community c(g);
+  
+  start = clock();
 	
 	WeightedGraph wg = c.partition_one_level(g, finalEdges);
     //WeightedGraph wg;
@@ -800,7 +814,7 @@ int main(int argc, char** argv)
 		{
 				while(decrease < 5)
 				{
-                    c.reset_degrees();
+          c.reset_degrees();
 					c.recalc_degrees(finalEdges);
 					c.sort_out_degrees();
 					c.reassign_communities();
@@ -829,8 +843,8 @@ int main(int argc, char** argv)
 							best_modularity = new_modularity;
 							//calc_conductance(best_wg, g, best_modularity, file_no);
                             
-                            // FOR CHECKING IMPROVEMENT, MIGHT BE TEMPORARY
-                            decrease = 0;
+              // FOR CHECKING IMPROVEMENT, MIGHT BE TEMPORARY
+              decrease = 0;
 						}
 					}
 					else
@@ -862,20 +876,20 @@ int main(int argc, char** argv)
 
 				//merging step
             
-//			wg.calc_edge_total();
-//			std::vector<pair<pair<int, int>, double > > fracEdges;
-//			fracEdges.resize(wg.edgeTotal.size());
-//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//			{
-//				pair<int, int> edge = it->first;
-//				double frac = it->second;
-//				pair<pair<int, int>, double > frac_edge(edge, frac);
-//				fracEdges.push_back(frac_edge);
-//			}
-//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//			wg.mergeClusters(fracEdges, p); //merge the clusters
+			wg.calc_edge_total();
+			std::vector<pair<pair<int, int>, double > > fracEdges;
+			fracEdges.resize(wg.edgeTotal.size());
+		  for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+			{
+				pair<int, int> edge = it->first;
+				double frac = it->second;
+				pair<pair<int, int>, double > frac_edge(edge, frac);
+				fracEdges.push_back(frac_edge);
+			}
+			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+			wg.mergeClusters(fracEdges, p); //merge the clusters
             
-             wg.mergeClusters(g.num_edges);
+//        wg.mergeClusters(g.num_edges);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);

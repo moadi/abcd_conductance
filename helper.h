@@ -12,6 +12,7 @@ class Helper
 		std::mt19937 gen;
 		int num_vertices;
 		unsigned long seed;
+        uint32_t max_phm = 100;
 
 		Helper(Graph& graph, unsigned long in_seed)
 		{
@@ -34,7 +35,14 @@ class Helper
 			double decision = random(gen);
 			return decision;
 		}
-
+    
+        double randomPhm()
+        {
+            std::uniform_real_distribution<> random(1, max_phm);
+            double phm = random(gen);
+            return phm;
+        }
+    
         double probability()
 		{
 			std::uniform_real_distribution<> reset(0,1);

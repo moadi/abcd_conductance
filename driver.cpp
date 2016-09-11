@@ -746,13 +746,13 @@ int main(int argc, char** argv)
   uint64_t edge_num = 0;
   for(auto it = g.edges.begin(); it != g.edges.end(); it++)
   {
-    it->second.phm = helper.randomPhm();
+    //it->second.phm = helper.randomPhm();
     finalEdges[edge_num] = it->second;
     ++edge_num;
   }
 
 
-	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
+	//std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
 //    ofstream phm_file("pheromone_levels");
 //    for(int i = 0; i < finalEdges.size(); i++)

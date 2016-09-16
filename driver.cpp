@@ -739,18 +739,6 @@ int main(int argc, char** argv)
 //	{
 //		finalEdges.push_back(it->second);
 //	}
-  
-  /*
-   * If we are skipping exploration phase!
-   */
-  uint64_t edge_num = 0;
-  for(auto it = g.edges.begin(); it != g.edges.end(); it++)
-  {
-    //it->second.phm = helper.randomPhm();
-    finalEdges[edge_num] = it->second;
-    ++edge_num;
-  }
-
 
 	//std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
@@ -763,13 +751,28 @@ int main(int argc, char** argv)
 //    exit(EXIT_SUCCESS);
 	//cout << "\n";
 
-
+  /*
+   * If we are skipping exploration phase!
+   */
+  uint64_t edge_num = 0;
+  for(auto it = g.edges.begin(); it != g.edges.end(); it++)
+  {
+    //it->second.phm = helper.randomPhm();
+    finalEdges[edge_num] = it->second;
+    ++edge_num;
+  }
 
   Community c(g);
+  c.comm = g.num_vertices;
+  for(auto& community : c.n2c)
+  {
+    community = helper.newVertex();
+  }
+  
   
   start = clock();
 	
-	WeightedGraph wg = c.partition_one_level(g, finalEdges);
+  WeightedGraph wg = c.rebuild_graph(finalEdges, g);
     //WeightedGraph wg;
     
     //wg = best_explr_wg;

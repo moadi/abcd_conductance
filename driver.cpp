@@ -860,7 +860,7 @@ int main(int argc, char** argv)
 				//wg = c.rebuild_graph(finalEdges); // store the best graph so far in wg
                 wg = best_wg;
 
-				//merging step
+				/* //merging step
             
 //			wg.calc_edge_total();
 //			std::vector<pair<pair<int, int>, double > > fracEdges;
@@ -903,7 +903,7 @@ int main(int argc, char** argv)
 				}
 
 				c.reset_degrees();
-				c.recalc_degrees(finalEdges);
+				c.recalc_degrees(finalEdges); */
 
 				/*
 				 * Perturb the best wg

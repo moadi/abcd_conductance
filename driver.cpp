@@ -19,6 +19,7 @@
 #include <fstream>
 #include <cmath>
 #include <cassert>
+#include <chrono>
 
 using namespace std;
 
@@ -751,6 +752,7 @@ int main(int argc, char** argv)
     ++edge_num;
   }
 
+  std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
 
 	//std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     

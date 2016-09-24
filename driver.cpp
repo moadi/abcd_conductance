@@ -794,8 +794,8 @@ int main(int argc, char** argv)
 	 */
 //	cout << "Local optimization....\n\n";
 
-	while(final_decrease < p.max_decrease)
-	{
+	//while(final_decrease < p.max_decrease)
+	//{
 		while(round_one_decrease < p.max_decrease)
 		{
 				while(decrease < 5)
@@ -981,7 +981,7 @@ int main(int argc, char** argv)
 					prev_modularity = new_modularity;
 				}
 		} // round one of local optimization is complete
-		round_one_decrease = 0;
+		/*round_one_decrease = 0;
 
 		// reassign cluster assignments to final_best_wg
 		for(int i = 0; i < best_wg.num_vertices; i++)
@@ -1028,7 +1028,7 @@ int main(int argc, char** argv)
 		{
 			++final_decrease;
 		}
-	}
+	}*/
     
     auto time_taken = (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000);
     // conductance stats

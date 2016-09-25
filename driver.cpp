@@ -861,21 +861,27 @@ int main(int argc, char** argv)
                 wg = best_wg;
 
 				//merging step
+      
+      /*
+       * First attempt to do pheromone based merging.
+       * if the modularity does not improve till round_one_decrease = (2/3) * p.max_decrease
+       * then switch to modularity based merging
+       */
             
-//			wg.calc_edge_total();
-//			std::vector<pair<pair<int, int>, double > > fracEdges;
-//			fracEdges.resize(wg.edgeTotal.size());
-//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//			{
-//				pair<int, int> edge = it->first;
-//				double frac = it->second;
-//				pair<pair<int, int>, double > frac_edge(edge, frac);
-//				fracEdges.push_back(frac_edge);
-//			}
-//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//			wg.mergeClusters(fracEdges, p); //merge the clusters
+			wg.calc_edge_total();
+			std::vector<pair<pair<int, int>, double > > fracEdges;
+			fracEdges.resize(wg.edgeTotal.size());
+			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+			{
+				pair<int, int> edge = it->first;
+				double frac = it->second;
+        pair<pair<int, int>, double > frac_edge(edge, frac);
+				fracEdges.push_back(frac_edge);
+			}
+			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+			wg.mergeClusters(fracEdges, p); //merge the clusters
             
-             wg.mergeClusters(g.num_edges);
+      //wg.mergeClusters(g.num_edges);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
@@ -899,7 +905,7 @@ int main(int argc, char** argv)
 
 					best_modularity = new_modularity;
 					//best_wg = c.rebuild_graph(finalEdges);
-                    best_wg = wg;
+          best_wg = wg;
 				}
 
 				c.reset_degrees();
@@ -978,6 +984,33 @@ int main(int argc, char** argv)
 				else
 				{
 					++round_one_decrease;
+          int threshold = (2.0/3.0) * p.max_decrease;
+          if (round_one_decrease == threshold)
+          {
+            wg = best_wg;
+            //std::cerr << "Attempting modularity based merging...\n";
+            wg.mergeClusters(g.num_edges);
+            new_modularity = wg.modularity(g);
+            if (new_modularity > best_modularity)
+            {
+              for(int i = 0; i < wg.num_vertices; i++)
+              {
+                if((wg.vertex[i].id != i) || (wg.vertex[i].origNodes.size() == 0))
+                  continue;
+                
+                for(auto it = wg.vertex[i].origNodes.begin(); it != wg.vertex[i].origNodes.end(); it++)
+                {
+                  c.n2c[*it] = i;
+                }
+              }
+              best_modularity = new_modularity;
+              best_wg = wg;
+              round_one_decrease = 0;
+              
+              c.reset_degrees();
+              c.recalc_degrees(finalEdges);
+            }
+          }
 					prev_modularity = new_modularity;
 				}
 		} // round one of local optimization is complete

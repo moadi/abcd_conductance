@@ -404,8 +404,8 @@ void updatePheromone(Graph* g)
         
 		if(edge_it->second.phm < 1)
 			edge_it->second.phm = 1;
-        else if(edge_it->second.phm > 100)
-            edge_it->second.phm = 100;
+    else if(edge_it->second.phm > 100)
+      edge_it->second.phm = 100;
         
 		edge_it->second.nVisited = 0;
 	}
@@ -868,20 +868,20 @@ int main(int argc, char** argv)
        * then switch to modularity based merging
        */
             
-			wg.calc_edge_total();
-			std::vector<pair<pair<int, int>, double > > fracEdges;
-			fracEdges.resize(wg.edgeTotal.size());
-			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-			{
-				pair<int, int> edge = it->first;
-				double frac = it->second;
-        pair<pair<int, int>, double > frac_edge(edge, frac);
-				fracEdges.push_back(frac_edge);
-			}
-			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-			wg.mergeClusters(fracEdges, p); //merge the clusters
+//			wg.calc_edge_total();
+//			std::vector<pair<pair<int, int>, double > > fracEdges;
+//			fracEdges.resize(wg.edgeTotal.size());
+//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+//			{
+//				pair<int, int> edge = it->first;
+//				double frac = it->second;
+//       pair<pair<int, int>, double > frac_edge(edge, frac);
+//				fracEdges.push_back(frac_edge);
+//			}
+//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+//			wg.mergeClusters(fracEdges, p); //merge the clusters
             
-      //wg.mergeClusters(g.num_edges);
+      wg.mergeClusters(g.num_edges);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
@@ -989,7 +989,20 @@ int main(int argc, char** argv)
           {
             wg = best_wg;
             //std::cerr << "Attempting modularity based merging...\n";
-            wg.mergeClusters(g.num_edges);
+            
+    			  wg.calc_edge_total();
+    			  std::vector<pair<pair<int, int>, double > > fracEdges;
+      			fracEdges.resize(wg.edgeTotal.size());
+      			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+      			{
+      				pair<int, int> edge = it->first;
+      				double frac = it->second;
+              pair<pair<int, int>, double > frac_edge(edge, frac);
+      				fracEdges.push_back(frac_edge);
+      			}
+      			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+      			wg.mergeClusters(fracEdges, p); //merge the clusters
+            
             new_modularity = wg.modularity(g);
             if (new_modularity > best_modularity)
             {

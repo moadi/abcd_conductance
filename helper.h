@@ -12,7 +12,7 @@ class Helper
 		std::mt19937 gen;
 		int num_vertices;
 		unsigned long seed;
-        uint32_t max_phm = 100;
+        uint32_t max_phm = 15;
 
 		Helper(Graph& graph, unsigned long in_seed)
 		{
@@ -56,6 +56,7 @@ class Helper
 			int vert = vertex(gen);
 			return vert;
 		}
+    
 };
 
 #endif /* HELPER_H_ */

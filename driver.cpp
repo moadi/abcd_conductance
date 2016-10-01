@@ -674,11 +674,18 @@ int main(int argc, char** argv)
 //    std::cout << g.num_vertices - counter << "\n";
 
 //	cout << "Exploration phase....\n\n";
-    
-//    start = clock();
+  uint64_t edge_num = 0;
+  for(auto it = g.edges.begin(); it != g.edges.end(); it++)
+  {
+    it->second.phm = helper.randomPhm();
+    //finalEdges[edge_num] = it->second;
+    //++edge_num;
+  }
+  
+    start = clock();
 
 	//exploration of the graph is done by the ants
-	/*for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
+	for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
 	{
         antsMove(ants, &g, helper, p);
         
@@ -730,7 +737,7 @@ int main(int argc, char** argv)
 		{
 			eta = 0.02;
 		}
-	}*/
+	}
 
 //	cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
 
@@ -740,17 +747,6 @@ int main(int argc, char** argv)
 //	{
 //		finalEdges.push_back(it->second);
 //	}
-  
-  /*
-   * If we are skipping exploration phase!
-   */
-  uint64_t edge_num = 0;
-  for(auto it = g.edges.begin(); it != g.edges.end(); it++)
-  {
-    it->second.phm = helper.randomPhm();
-    finalEdges[edge_num] = it->second;
-    ++edge_num;
-  }
 
   //std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
 
@@ -769,7 +765,7 @@ int main(int argc, char** argv)
 
   Community c(g);
   
-  start = clock();
+  //start = clock();
 	
 	WeightedGraph wg = c.partition_one_level(g, finalEdges);
     //WeightedGraph wg;

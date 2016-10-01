@@ -75,7 +75,7 @@ class WeightedGraph
 
 		void calc_edge_total();
 
-		void mergeClusters(std::vector<pair<pair<int, int>, double > >&, Parameters&);
+		void mergeClusters(std::vector<pair<pair<int, int>, double > >&, Parameters&, int num_edges);
     
         void mergeClusters(int); //merge using modularity
     

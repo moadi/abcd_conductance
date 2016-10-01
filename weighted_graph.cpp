@@ -293,7 +293,7 @@ void WeightedGraph::mergeNodes(int node1, int node2)
 	} //Done updating the graph
 }
 
-void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& fracEdges, Parameters& p)
+void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& fracEdges, Parameters& p, int num_edges)
 {
 	for(auto it = fracEdges.begin(); it != fracEdges.end(); it++) //iterate over the sorted edges
 	{
@@ -313,66 +313,21 @@ void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& f
 		//if any node has already been merged with another then skip
 		if(vertex[node1].id == -1 || vertex[node2].id == -1)
 			continue;
-
-//		if(vertex[node1].id != node1)
-//		{
-//			node1 = vertex[node1].id;
-//		}
-//		else if(vertex[node2].id != node2)
-//		{
-//			node2 = vertex[node2].id;
-//		}
-
-		double node1_frac, node2_frac; //the weight of each node is calculated
-		node1_frac = vertex[node1].weight / vertex[node1].total;
-		node2_frac = vertex[node2].weight / vertex[node2].total;
-
-
-		//if both nodes are very well connected inside, don't merge
-		if((node1_frac >= p.threshold) && (node2_frac >= p.threshold))
-		{
-			continue;
-		}
-		else if((edge_it->second / vertex[node1].weight) > node1_frac)
-		{
-			//if node1 has more elements
-			if(vertex[node1].origNodes.size() >= vertex[node2].origNodes.size())
-			{
-				mergeNodes(node1, node2);
-			}
-			else //node2 has more elements
-			{
-				mergeNodes(node2, node1);
-			}
-
-		}
-
-		else if((edge_it->second / vertex[node2].weight) > node2_frac) //if the pheromone along this edge is high
-		{
-			//if node1 has more elements
-			if(vertex[node1].origNodes.size() >= vertex[node2].origNodes.size())
-			{
-				mergeNodes(node1, node2);
-			}
-			else //node2 has more elements
-			{
-				mergeNodes(node2, node1);
-			}
-		}
-		else //proceed to merge
-		{
-			//if node1 has more elements
-			if(vertex[node1].origNodes.size() >= vertex[node2].origNodes.size())
-			{
-				mergeNodes(node1, node2);
-			}
-			else //node2 has more elements
-			{
-				mergeNodes(node2, node1);
-			}
-		}
-
-	}
+        
+        // If merging these 2 nodes improves modularity, then do it
+        double improvement = modularity_gain(node1, node2, num_edges);
+        if (improvement > 0)
+        {
+            if (vertex[node1].origNodes.size() >= vertex[node2].origNodes.size())
+            {
+                mergeNodes(node1, node2);
+            }
+            else
+            {
+                mergeNodes(node2, node1);
+            }
+        }
+    }
 }
 
 void WeightedGraph::mergeClusters(int num_edges)

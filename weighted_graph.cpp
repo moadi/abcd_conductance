@@ -67,6 +67,8 @@ void WeightedGraph::displayGraph()
 			}
 			communities << vertex[i].neighbors[j] << " - " << cross_edges_it->second << ", " << cross_phm_it->second << "     ";
 		}
+        communities << "\n";
+        communities << "Actual cluster number in output: " << clusters << "\n";
 
 		communities << "\n \n";
 	}

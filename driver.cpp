@@ -863,26 +863,30 @@ int main(int argc, char** argv)
 				//merging step
       
       /*
-       * First attempt to do pheromone based merging.
-       * if the modularity does not improve till round_one_decrease = (2/3) * p.max_decrease
-       * then switch to modularity based merging
+       * For 1/3rd of the time attempt modularity based merging,
+       * and then attempt pheromone based merging
        */
-            
-//			wg.calc_edge_total();
-//			std::vector<pair<pair<int, int>, double > > fracEdges;
-//			fracEdges.resize(wg.edgeTotal.size());
-//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//			{
-//				pair<int, int> edge = it->first;
-//				double frac = it->second;
-//       pair<pair<int, int>, double > frac_edge(edge, frac);
-//				fracEdges.push_back(frac_edge);
-//			}
-//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//			wg.mergeClusters(fracEdges, p); //merge the clusters
-            
-      wg.mergeClusters(g.num_edges);
-
+      int threshold = (1.0/3.0) * p.max_decrease;
+      if (round_one_decrease < threshold)
+      {
+        wg.mergeClusters(g.num_edges);
+      }
+      else
+      {
+        wg.calc_edge_total();
+        std::vector<pair<pair<int, int>, double > > fracEdges;
+        fracEdges.resize(wg.edgeTotal.size());
+        for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+        {
+          pair<int, int> edge = it->first;
+          double frac = it->second;
+          pair<pair<int, int>, double > frac_edge(edge, frac);
+          fracEdges.push_back(frac_edge);
+        }
+        std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+        wg.mergeClusters(fracEdges, p); //merge the clusters
+      }
+      
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);
             
@@ -907,126 +911,16 @@ int main(int argc, char** argv)
 					//best_wg = c.rebuild_graph(finalEdges);
           best_wg = wg;
 				}
-
-				c.reset_degrees();
-				c.recalc_degrees(finalEdges);
-
-				/*
-				 * Perturb the best wg
-				 */
-
-				//consider reassigning only those nodes with delta in specified range
-				for(int i = 0; i < g.num_vertices; i++)
-				{
-					int max_out_degree = 0;
-					int cluster;
-					//if the range matches
-					if((c.delta[i] > 0) && (c.delta[i] <= 2))
-					{
-						if(c.out_degree[i].empty()) // if it has no outgoing connections
-							continue;
-
-						for(auto it = c.out_degree[i].begin(); it != c.out_degree[i].end(); it++)
-						{
-							cluster = it->first;
-							//if this cluster had been previously considered
-							if(perturb_tabu_list[i].searchList(cluster) == true)
-                            {
-//								cout << "Considered " << cluster << " before.\n";
-                                continue; //skip
-                            }
-
-//							if(max_out_degree < 2*abs(c.delta[i]))
-//								continue;
-
-							if(it->second > max_out_degree)
-							{
-								cluster = it->first;
-								max_out_degree = it->second;
-							}
-						}
-                        
-                        if(max_out_degree < 2*abs(c.delta[i]))
-                            continue;
-
-						perturb_tabu_list[i].addToList(c.n2c[i]); //add cluster to tabu list
-//						if(cluster_tabu_list[i].searchList(c.n2c[i]) == false)
-//						{
-//							cluster_tabu_list[i].addToList(c.n2c[i]);
-//						}
-						c.n2c[i] = cluster;
-						//cout << "Replacing...." << "\n\n";
-					}
-				}
-
-				// recompute the degrees because reassigning clusters might change that
-				c.reset_degrees();
-				c.recalc_degrees(finalEdges);
-
-				wg = c.rebuild_graph(finalEdges, g);
-				new_modularity = wg.modularity(g);
-            
-                // write conductance to file
-//                calc_conductance(wg, g, new_modularity, file_no);
-
-				// check for improvement
-				if(new_modularity > best_modularity) // just change to check
-				{
-					best_modularity = new_modularity;
-					//best_wg = c.rebuild_graph(finalEdges);
-                    best_wg = wg;
-                    
-					//calc_conductance(best_wg, g, best_modularity, file_no);
-                    
-                    // For checking improvement, might be temporary
-                    round_one_decrease = 0;
-				}
 				else
 				{
 					++round_one_decrease;
-          int threshold = (2.0/3.0) * p.max_decrease;
-          if (round_one_decrease == threshold)
-          {
-            wg = best_wg;
-            //std::cerr << "Attempting modularity based merging...\n";
-            
-    			  wg.calc_edge_total();
-    			  std::vector<pair<pair<int, int>, double > > fracEdges;
-      			fracEdges.resize(wg.edgeTotal.size());
-      			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-      			{
-      				pair<int, int> edge = it->first;
-      				double frac = it->second;
-              pair<pair<int, int>, double > frac_edge(edge, frac);
-      				fracEdges.push_back(frac_edge);
-      			}
-      			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-      			wg.mergeClusters(fracEdges, p); //merge the clusters
-            
-            new_modularity = wg.modularity(g);
-            if (new_modularity > best_modularity)
-            {
-              for(int i = 0; i < wg.num_vertices; i++)
-              {
-                if((wg.vertex[i].id != i) || (wg.vertex[i].origNodes.size() == 0))
-                  continue;
-                
-                for(auto it = wg.vertex[i].origNodes.begin(); it != wg.vertex[i].origNodes.end(); it++)
-                {
-                  c.n2c[*it] = i;
-                }
-              }
-              best_modularity = new_modularity;
-              best_wg = wg;
-              round_one_decrease = 0;
-              
-              c.reset_degrees();
-              c.recalc_degrees(finalEdges);
-            }
-          }
-					prev_modularity = new_modularity;
-				}
+          prev_modularity = new_modularity;
+        }
+        c.reset_degrees();
+        c.recalc_degrees(finalEdges);
+        //wg = c.rebuild_graph(finalEdges, g);
 		} // round one of local optimization is complete
+  
 		round_one_decrease = 0;
 
 		// reassign cluster assignments to final_best_wg

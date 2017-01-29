@@ -48,6 +48,13 @@ class Helper
 			int vert = vertex(gen);
 			return vert;
 		}
+    
+        double randomNumber(double max)
+        {
+            std::uniform_real_distribution<> random(0, max);
+            double decision = random(gen);
+            return decision;
+        }
 };
 
 #endif /* HELPER_H_ */

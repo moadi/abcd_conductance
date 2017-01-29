@@ -60,6 +60,7 @@ class Vertex
 		int * neighbors; //set of 1-hop neighbors of this vertex
 		int * common; //intersection size with each neighbor of this vertex
 //        int node_id; //stores the node id (which can be different from the id above)
+        std::vector<double> mod_gain; // stores the modularity gain when merging with a neighboring node
         std::vector<Edge*> neighb_edge;
 
 //		std::vector<int> neighbors;

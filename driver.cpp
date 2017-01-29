@@ -89,6 +89,30 @@ struct greater_than_key_3
 	}
 };
 
+inline std::pair<int, int> form_edge(int n1, int n2)
+{
+  if (n1 < n2)
+    return std::make_pair(n1, n2);
+  else
+    return std::make_pair(n2, n1);
+}
+
+void compute_mod_gain(Graph& g)
+{
+  const double frac1 = (double) 1 / g.num_edges;
+  const double frac2 = (double) 1 / (2 * g.num_edges * g.num_edges);
+  
+  for(int i = 0; i < g.num_vertices; ++i)
+  {
+    for(int j = 0; j < g.vertex[i].degree; ++j)
+    {
+      int neighbor = g.vertex[i].neighbors[j];
+      double gain = frac1 - (double) ( (g.vertex[i].degree * g.vertex[neighbor].degree) * frac2 );
+      g.vertex[i].mod_gain.push_back(gain);
+    }
+  }
+}
+
 /* Function to reset the position of the ants
  * after each iteration is complete
  */
@@ -348,6 +372,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
     for(int i=0; i < ant->location.degree; i++)  //iterate and update the values
 	{
         inter_size = ant->location.common[i]; //get intersection size
+    double mod_gain = ant->location.mod_gain[i];
 //        neighbor = ant->location.neighbors[i]; //get first neighbor
 //
 //		//make the edge pair to look up hashtable later
@@ -363,9 +388,17 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //		
 //        //add the computed value to the array
 //        adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
-        adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
-                            ((double) p.beta * inter_size);
-        sum += adjNodeFitness[i]; //update sum
+        //adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
+                            //((double) p.beta * mod_gain);
+        if (mod_gain > 0 )
+        {
+          adjNodeFitness[i] = mod_gain;
+          sum += adjNodeFitness[i]; //update sum
+        }
+        else
+        {
+          adjNodeFitness[i] = 0;
+        }
 	}
 
 //	for(int i = 0; i < ant->location.degree; i++)
@@ -374,7 +407,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //	}
 
 	//Generate a random number uniformly distributed in the range [0,1)
-	double decision = helper.randomNumber();
+	double decision = helper.randomNumber(sum);
 
 	//Choose the next vertex for the ant
 	int vertex = -1;// = ant->location.neighbors[0]; //result
@@ -382,7 +415,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 	bool chosen = false;
 	for(int i=0; i < ant->location.degree && !chosen; i++)
 	{
-		fitness += (adjNodeFitness[i] / sum);
+		fitness += (adjNodeFitness[i]);
 		if(fitness > decision)
 		{
 			vertex = ant->location.neighbors[i];
@@ -621,6 +654,10 @@ int main(int argc, char** argv)
 
 	//calculate the intersection size of each node with its neighbor
 	calcNeighborhoodSize(&g);
+  
+  g.build_neighb_edges();
+  
+  compute_mod_gain(g);
 
 	//cout << "Completed...\n\n";
 	//create the ants and place them on the graph
@@ -646,9 +683,7 @@ int main(int argc, char** argv)
 	Parameters p(g);
     
 	Helper helper(g, seed);
-    
-    g.build_neighb_edges();
-    
+  
 //    cout << "Preprocessing time = "<< (clock() - start)/ (double)(CLOCKS_PER_SEC/1000) << " ms \n\n";
 
 

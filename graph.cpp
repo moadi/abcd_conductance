@@ -391,6 +391,7 @@ void Graph::build_neighb_edges()
     for (int i = 0; i < num_vertices; ++i)
     {
         vertex[i].neighb_edge.reserve(vertex[i].degree);
+        vertex[i].mod_gain.reserve(vertex[i].degree);
         for (int j = 0; j < vertex[i].degree; ++j)
         {
             std::pair<int, int> edge;

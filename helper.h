@@ -63,6 +63,13 @@ class Helper
             std::uniform_int_distribution<> vertex(0, num_communities - 1);
             int comm = vertex(gen);
             return comm;
+		}
+
+        double randomNumber(double max)
+        {
+            std::uniform_real_distribution<> random(0, max);
+            double decision = random(gen);
+            return decision;
         }
 };
 

@@ -387,9 +387,9 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //		
 //        //add the computed value to the array
         //adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
-        //adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
-        //                    ((double) p.beta * inter_size);
-        if (mod_gain > 0 )
+        adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
+                            ((double) p.beta * inter_size);
+        /*if (mod_gain > 0 )
         {
           adjNodeFitness[i] = mod_gain;
           sum += adjNodeFitness[i]; //update sum
@@ -397,7 +397,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
         else
         {
           adjNodeFitness[i] = 0;
-        }
+        }*/
     //adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
     //                     mod_gain;
     //adjNodeFitness[i] = mod_gain;
@@ -411,7 +411,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //	}
 
 	//Generate a random number uniformly distributed in the range [0,1)
-	double decision = helper.randomNumber(sum);
+	double decision = helper.randomNumber();
 
 	//Choose the next vertex for the ant
 	int vertex = -1;// = ant->location.neighbors[0]; //result
@@ -419,7 +419,7 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 	bool chosen = false;
 	for(int i=0; i < ant->location.degree && !chosen; i++)
 	{
-		fitness += (adjNodeFitness[i]);
+		fitness += (adjNodeFitness[i] / sum);
 		if(fitness > decision)
 		{
 			vertex = ant->location.neighbors[i];
@@ -802,7 +802,7 @@ int main(int argc, char** argv)
     //wg = best_explr_wg;
     
 	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
-  exit(EXIT_SUCCESS);
+  //exit(EXIT_SUCCESS);
 
 
 	WeightedGraph best_wg; //keeps track of the best partition so far

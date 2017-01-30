@@ -386,9 +386,9 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
 //        assert(edge_it != g->edges.end());
 //		
 //        //add the computed value to the array
-//        adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
+        //adjNodeFitness[i] = (p.alpha * edge_it->second.phm) + ((double) p.beta * inter_size);
         //adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
-                            //((double) p.beta * mod_gain);
+        //                    ((double) p.beta * inter_size);
         if (mod_gain > 0 )
         {
           adjNodeFitness[i] = mod_gain;
@@ -398,6 +398,11 @@ int chooseNext(Ant* ant, Graph* g, Helper& helper, Parameters& p)
         {
           adjNodeFitness[i] = 0;
         }
+    //adjNodeFitness[i] = (p.alpha * g->vertex[cur_vertex].neighb_edge[i]->phm) +
+    //                     mod_gain;
+    //adjNodeFitness[i] = mod_gain;
+    //sum += adjNodeFitness[i];
+    
 	}
 
 //	for(int i = 0; i < ant->location.degree; i++)
@@ -777,13 +782,14 @@ int main(int argc, char** argv)
 
 	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
-//    ofstream phm_file("pheromone_levels");
-//    for(int i = 0; i < finalEdges.size(); i++)
-//	{
-//		phm_file << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
-//	}
-//    phm_file.close();
-//    exit(EXIT_SUCCESS);
+    ofstream phm_file("pheromone_levels");
+    for(int i = 0; i < finalEdges.size(); i++)
+	{
+		//phm_file << finalEdges[i].v1 << " " << finalEdges[i].v2 << " " << finalEdges[i].phm << "\n";
+    phm_file << finalEdges[i].phm << "\n";
+	}
+    phm_file.close();
+    //exit(EXIT_SUCCESS);
 	//cout << "\n";
 
 
@@ -795,7 +801,8 @@ int main(int argc, char** argv)
     
     //wg = best_explr_wg;
     
-//	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
+	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
+  exit(EXIT_SUCCESS);
 
 
 	WeightedGraph best_wg; //keeps track of the best partition so far
@@ -897,18 +904,18 @@ int main(int argc, char** argv)
 
 				//merging step
             
-//			wg.calc_edge_total();
-//			std::vector<pair<pair<int, int>, double > > fracEdges;
-//			fracEdges.resize(wg.edgeTotal.size());
-//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//			{
-//				pair<int, int> edge = it->first;
-//				double frac = it->second;
-//				pair<pair<int, int>, double > frac_edge(edge, frac);
-//				fracEdges.push_back(frac_edge);
-//			}
-//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//			wg.mergeClusters(fracEdges, p); //merge the clusters
+			/*wg.calc_edge_total();
+			std::vector<pair<pair<int, int>, double > > fracEdges;
+			fracEdges.resize(wg.edgeTotal.size());
+			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+			{
+				pair<int, int> edge = it->first;
+				double frac = it->second;
+				pair<pair<int, int>, double > frac_edge(edge, frac);
+				fracEdges.push_back(frac_edge);
+			}
+			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+			wg.mergeClusters(fracEdges, p); //merge the clusters*/
             
              wg.mergeClusters(g.num_edges);
 

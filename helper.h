@@ -18,16 +18,27 @@ class Helper
 		{
             if (in_seed == 0)
             {
-                seed = rd();
+                //seed = rd();
+                seedRandomEngine();
             }
             else
             {
                 seed = in_seed;
+                // seed = 425624331;
+                gen.seed(seed);
             }
-//			seed = 425624331;
-			gen.seed(seed);
 			num_vertices = graph.num_vertices;
 		}
+    
+        // Copied from: https://codereview.stackexchange.com/questions/109260/seed-stdmt19937-from-stdrandom-device
+        template<class T = std::mt19937, std::size_t N = T::state_size>
+        void seedRandomEngine()
+        {
+            typename T::result_type random_data[N];
+            std::generate(std::begin(random_data), std::end(random_data), std::ref(rd));
+            std::seed_seq seeds(std::begin(random_data), std::end(random_data));
+            gen.seed(seeds);
+        }
 
         double randomNumber()
 		{

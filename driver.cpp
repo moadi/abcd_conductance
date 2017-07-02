@@ -862,20 +862,21 @@ int main(int argc, char** argv)
 
 				//merging step
             
-//			wg.calc_edge_total();
-//			std::vector<pair<pair<int, int>, double > > fracEdges;
-//			fracEdges.resize(wg.edgeTotal.size());
-//			for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
-//			{
-//				pair<int, int> edge = it->first;
-//				double frac = it->second;
-//				pair<pair<int, int>, double > frac_edge(edge, frac);
-//				fracEdges.push_back(frac_edge);
-//			}
-//			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
-//			wg.mergeClusters(fracEdges, p); //merge the clusters
+			/* wg.calc_edge_total();
+			std::vector<pair<pair<int, int>, double > > fracEdges;
+			fracEdges.resize(wg.edgeTotal.size());
+		  for(auto it = wg.edgeTotal.begin(); it != wg.edgeTotal.end(); it++)
+			{
+				pair<int, int> edge = it->first;
+				double frac = it->second;
+				pair<pair<int, int>, double > frac_edge(edge, frac);
+				fracEdges.push_back(frac_edge);
+			}
+			std::sort(fracEdges.begin(), fracEdges.end(), greater_than_key_2());
+			wg.mergeClusters(fracEdges, p); //merge the clusters */
             
-             wg.mergeClusters(g.num_edges);
+        //wg.mergeClusters(g.num_edges);
+      wg.mergeClustersRandom(g.num_edges, helper);
 
 				// if there is an improvement, save it to the final_best_wg
 				new_modularity = wg.modularity(g);

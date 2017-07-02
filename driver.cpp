@@ -779,13 +779,13 @@ int main(int argc, char** argv)
   /*
    * If we are skipping exploration phase!
    */
-  uint64_t edge_num = 0;
+  /* uint64_t edge_num = 0;
   for(auto it = g.edges.begin(); it != g.edges.end(); it++)
   {
     //it->second.phm = helper.randomPhm();
     finalEdges[edge_num] = it->second;
     ++edge_num;
-  }
+  } */
 
   //std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
 
@@ -806,10 +806,10 @@ int main(int argc, char** argv)
   
   start = clock();
 	
-	//WeightedGraph wg = c.partition_one_level(g, finalEdges);
-    WeightedGraph wg;
+	WeightedGraph wg = c.partition_one_level(g, finalEdges);
+    //WeightedGraph wg;
     
-    wg = best_explr_wg;
+    //wg = best_explr_wg;
     
 //	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
 

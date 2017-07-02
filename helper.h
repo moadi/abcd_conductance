@@ -13,6 +13,7 @@ class Helper
 		int num_vertices;
 		unsigned long seed;
         uint32_t max_phm = 100;
+        int num_communities = 0;
 
 		Helper(Graph& graph, unsigned long in_seed)
 		{
@@ -67,6 +68,13 @@ class Helper
 			int vert = vertex(gen);
 			return vert;
 		}
+    
+        int newCommunity()
+        {
+            std::uniform_int_distribution<> vertex(0, num_communities - 1);
+            int comm = vertex(gen);
+            return comm;
+        }
 };
 
 #endif /* HELPER_H_ */

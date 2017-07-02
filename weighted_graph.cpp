@@ -414,6 +414,67 @@ void WeightedGraph::mergeClusters(int num_edges)
     }
 }
 
+void WeightedGraph::mergeClustersRandom(int num_edges, Helper& helper)
+{
+    // Set the number of iterations and the current number of communities
+    // so that the random number generation works properly
+    int num_iter = num_vertices;
+    helper.num_communities = num_vertices;
+    
+    for (int i = 0; i < num_iter; ++i)
+    {
+        int comm = getRandomCommunity(helper);
+        
+        // NOTE: DRY violation
+        
+        // find the community to which merging has the best improvement in modularity
+        int best_comm = comm; // best community default should be its own
+        double best_modularity = 0; // stores best improvement
+        
+        for (unsigned int j = 0; j < vertex[comm].neighbors.size(); j++)
+        {
+            double improvement = modularity_gain(comm, vertex[comm].neighbors[j], num_edges);
+            if (improvement > best_modularity)
+            {
+                best_modularity = improvement;
+                best_comm = vertex[comm].neighbors[j];
+            }
+        }
+        
+        // if best community is something other than the default, then merge the two communities
+        if (best_comm != comm)
+        {
+            if (vertex[comm].origNodes.size() >= vertex[best_comm].origNodes.size())
+            {
+                mergeNodes(comm, best_comm);
+            }
+            else
+            {
+                mergeNodes(best_comm, comm);
+            }
+        }
+        
+    }
+}
+
+int WeightedGraph::getRandomCommunity(Helper& helper)
+{
+    int comm = -1;
+    while(1)
+    {
+        comm = helper.newCommunity();
+        if (vertex[comm].id != -1)
+        {
+            break;
+        }
+        else
+        {
+            std::cout << "Chosen community " << comm << " already merged or invalidated\n";
+        }
+    }
+    return comm;
+}
+
 double WeightedGraph::modularity_gain(int node1, int node2, int num_edges)
 {
     // create the edge to get the number of

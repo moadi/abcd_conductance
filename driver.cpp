@@ -713,7 +713,7 @@ int main(int argc, char** argv)
 //    start = clock();
 
 	//exploration of the graph is done by the ants
-	/*for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
+	for(int i = 0; i < p.maxIterations && rounds_without_improvement < 6; i++)
 	{
         antsMove(ants, &g, helper, p);
         
@@ -765,7 +765,7 @@ int main(int argc, char** argv)
 		{
 			eta = 0.02;
 		}
-	}*/
+	}
 
 //	cout<<"Time for function antsMove = "<<(clock() - start)/ (double)(CLOCKS_PER_SEC/1000)<<" ms \n\n";
 
@@ -787,9 +787,9 @@ int main(int argc, char** argv)
     ++edge_num;
   }
 
-  std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
+  //std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
 
-	//std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
+	std::sort(finalEdges.begin(), finalEdges.end(), greater_than_key());
     
 //    ofstream phm_file("pheromone_levels");
 //    for(int i = 0; i < finalEdges.size(); i++)
@@ -806,10 +806,10 @@ int main(int argc, char** argv)
   
   start = clock();
 	
-	WeightedGraph wg = c.partition_one_level(g, finalEdges);
-    //WeightedGraph wg;
+	//WeightedGraph wg = c.partition_one_level(g, finalEdges);
+    WeightedGraph wg;
     
-    //wg = best_explr_wg;
+    wg = best_explr_wg;
     
 //	cout << "Modularity of initial partition = " << wg.modularity(g) << "\n\n";
 

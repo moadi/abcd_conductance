@@ -598,6 +598,57 @@ void parse_args(int argc, char** argv)
 	}
 }
 
+// The idea behind this local opt phase is to iterate over the graph nodes randomly,
+// then iterate over the neighbors of each vertex and place it in the neighbors community
+// to which the gain is maximum
+void local_opt_phase_one(Graph& g, Community& c, WeightedGraph& wg, std::vector<int>& graph_nodes, Helper& h)
+{
+  std::shuffle(graph_nodes.begin(), graph_nodes.end(), h.gen);
+  
+  // This map holds the community to which a given vertex should be merged into
+  std::unordered_map<int, int> join_map;
+  
+  for(const auto n : graph_nodes)
+  {
+    int node_comm = c.n2c[n];
+    int best_comm = node_comm;
+    double best_gain = 0;
+    
+    for (int i = 0; i < g.vertex[n].degree; ++i)
+    {
+      int neighbor = g.vertex[n].neighbors[i];
+      int neighb_comm = c.n2c[neighbor];
+      
+      // if the neighbor and node n are in the same community then skip
+      if (node_comm == neighb_comm)
+        continue;
+      
+      auto it = c.out_degree[n].find(neighb_comm);
+      assert(it != c.out_degree[n].end());
+      int out_degree = it->second;
+      
+      double mod_gain = modularity_gain(n, neighb_comm, out_degree, wg, g, c);
+      if (mod_gain > best_gain)
+      {
+        best_comm = neighb_comm;
+        best_gain = mod_gain;
+      }
+    }
+    
+    // if the best community is something other than the current one
+    // then replace
+    if (best_comm != node_comm)
+    {
+      join_map[n] = best_comm;
+    }
+  }
+  
+  for(const auto& it : join_map)
+  {
+    c.n2c[it.first] = it.second;
+  }
+}
+
 int main(int argc, char** argv)
 {
 	clock_t start; //calculates time for iteration
@@ -809,6 +860,10 @@ int main(int argc, char** argv)
 	 * Begin local optimization
 	 */
 //	cout << "Local optimization....\n\n";
+  
+  // Create graph node array which we will shuffle before every iteration
+  std::vector<int> graph_nodes(g.num_vertices);
+  std::iota(graph_nodes.begin(), graph_nodes.end(), 0);
 
 	while(final_decrease < p.max_decrease)
 	{
@@ -818,8 +873,10 @@ int main(int argc, char** argv)
 				{
           c.reset_degrees();
 					c.recalc_degrees(finalEdges);
-					c.sort_out_degrees();
-					c.reassign_communities();
+					//c.sort_out_degrees();
+					//c.reassign_communities();
+          
+          local_opt_phase_one(g, c, wg, graph_nodes, helper);
                     
                     //IGNORE
 					//c.reassign_communities(cluster_tabu_list);

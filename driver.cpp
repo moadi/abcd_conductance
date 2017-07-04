@@ -598,6 +598,99 @@ void parse_args(int argc, char** argv)
 	}
 }
 
+void update_community_structure(int node, WeightedGraph& wg, Community& c, Graph& g, int best_outdegree, int curr_comm, int best_comm)
+{
+    assert(wg.vertex[best_comm].id == best_comm);
+    
+    //double curr_mod = wg.modularity(g);
+    
+    wg.vertex[curr_comm].in_links -= c.in_degree[node];
+    
+    wg.vertex[curr_comm].degree_sum -= g.vertex[node].degree;
+    
+    wg.vertex[curr_comm].origNodes.erase(std::remove(wg.vertex[curr_comm].origNodes.begin(),
+                                                     wg.vertex[curr_comm].origNodes.end(),
+                                                     node));
+    
+    c.n2c[node] = best_comm;
+    int prev_in_degree = c.in_degree[node];
+    c.in_degree[node] = best_outdegree;
+    
+    auto it = c.out_degree[node].find(best_comm);
+    c.out_degree[node].erase(it);
+    
+    c.out_degree[node][curr_comm] = prev_in_degree;
+    
+    wg.vertex[best_comm].in_links += best_outdegree;
+    
+    wg.vertex[best_comm].degree_sum += g.vertex[node].degree;
+    wg.vertex[best_comm].origNodes.push_back(node);
+    
+    /* double new_mod = wg.modularity(g);
+    
+    assert(new_mod - curr_mod > 0); */
+    
+    //update all neighbors of this node
+    for (int j=0; j < g.vertex[node].degree; ++j)
+    {
+      int neighbor = g.vertex[node].neighbors[j];
+      if (c.n2c[neighbor] == curr_comm)
+      {
+        --c.in_degree[neighbor];
+        auto it = c.out_degree[neighbor].find(best_comm);
+        if (it != c.out_degree[neighbor].end())
+        {
+          ++it->second;
+        }
+        else
+        {
+          c.out_degree[neighbor][best_comm] = 1;
+        }
+      }
+      else
+      {
+        auto it_1 = c.out_degree[neighbor].find(curr_comm);
+        
+        assert(it_1 != c.out_degree[neighbor].end());
+        
+        if (it_1 != c.out_degree[neighbor].end())
+        {
+          if (it_1->second-1 == 0)
+          {
+            c.out_degree[neighbor].erase(it_1);
+          }
+          else
+          {
+            --(it_1->second);
+          }
+          
+          if (c.n2c[neighbor] == best_comm)
+          {
+            ++c.in_degree[neighbor];
+          }
+          
+        }
+        
+        // after this point, if the neighbor is in the
+        // same community, we are done updating the graph
+        if (c.n2c[neighbor] == best_comm)
+        {
+          continue;
+        }
+        
+        auto it_2 = c.out_degree[neighbor].find(best_comm);
+        if (it_2 != c.out_degree[neighbor].end())
+        {
+          ++it_2->second;
+        }
+        else
+        {
+          c.out_degree[neighbor][best_comm] = 1;
+        }
+      }
+    }
+}
+
 // The idea behind this local opt phase is to iterate over the graph nodes randomly,
 // then iterate over the neighbors of each vertex and place it in the neighbors community
 // to which the gain is maximum
@@ -612,6 +705,7 @@ void local_opt_phase_one(Graph& g, Community& c, WeightedGraph& wg, std::vector<
   {
     int node_comm = c.n2c[n];
     int best_comm = node_comm;
+    int best_outdegree = 0;
     double best_gain = 0;
     
     for (int i = 0; i < g.vertex[n].degree; ++i)
@@ -632,6 +726,7 @@ void local_opt_phase_one(Graph& g, Community& c, WeightedGraph& wg, std::vector<
       {
         best_comm = neighb_comm;
         best_gain = mod_gain;
+        best_outdegree = out_degree;
       }
     }
     
@@ -639,14 +734,15 @@ void local_opt_phase_one(Graph& g, Community& c, WeightedGraph& wg, std::vector<
     // then replace
     if (best_comm != node_comm)
     {
-      join_map[n] = best_comm;
+      //join_map[n] = best_comm;
+      update_community_structure(n, wg, c, g, best_outdegree, node_comm, best_comm);
     }
   }
   
-  for(const auto& it : join_map)
+  /*for(const auto& it : join_map)
   {
     c.n2c[it.first] = it.second;
-  }
+  }*/
 }
 
 int main(int argc, char** argv)

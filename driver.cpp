@@ -44,7 +44,7 @@ void expand_clique(WeightedGraph&, vector<int>&, Graph&, Community&, int&);
 
 void finalize(WeightedGraph&, Community&);
 
-void replace_nodes_modularity(Community&, WeightedGraph&, Graph&, std::vector<Edge>&);
+void replace_nodes_modularity(Community&, WeightedGraph&, Graph&, std::vector<Edge>&, std::vector<int>&);
 
 double modularity_gain(int, int, int, WeightedGraph&, Graph&, Community&);
 
@@ -969,11 +969,14 @@ int main(int argc, char** argv)
 				{
           c.reset_degrees();
 					c.recalc_degrees(finalEdges);
-					//c.sort_out_degrees();
-					//c.reassign_communities();
+					c.sort_out_degrees();
+					c.reassign_communities();
+          wg = c.rebuild_graph(finalEdges, g);
           
+          c.reset_degrees();
+          c.recalc_degrees(finalEdges);
           local_opt_phase_one(g, c, wg, graph_nodes, helper);
-                    
+          
                     //IGNORE
 					//c.reassign_communities(cluster_tabu_list);
 					//c.reassign_communities_sigmoid(helper);
@@ -1170,8 +1173,9 @@ int main(int argc, char** argv)
 
 		// try splitting the best_wg
 //		split_clusters(wg, c, g);        
-        
-        replace_nodes_modularity(c, wg, g, finalEdges);
+    
+    std::shuffle(graph_nodes.begin(), graph_nodes.end(), helper.gen);
+        replace_nodes_modularity(c, wg, g, finalEdges, graph_nodes);
         
 //		c.reset_degrees();
 //		c.recalc_degrees(finalEdges);
@@ -1687,7 +1691,7 @@ double modularity_gain(int node, int community, int out_degree, WeightedGraph& w
     return a-((double) b/denom);
 }
 
-void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g, std::vector<Edge>& finalEdges)
+void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g, std::vector<Edge>& finalEdges, std::vector<int>& graph_nodes)
 {
     // idea here is to consider each node
     // and check the gain in modularity by
@@ -1695,7 +1699,7 @@ void replace_nodes_modularity(Community& c, WeightedGraph& wg, Graph& g, std::ve
     // and placing it into a neighboring community.
     // replace only if gain is positive
     
-    for(int i = 0; i < g.num_vertices; ++i)
+    for(const auto i : graph_nodes)
     {
 //        wg.displayGraph();
         

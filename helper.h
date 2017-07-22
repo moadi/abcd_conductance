@@ -75,6 +75,13 @@ class Helper
             int comm = vertex(gen);
             return comm;
         }
+    
+        int newBfsNode(int max_size)
+        {
+            std::uniform_int_distribution<> node(0, max_size-1);
+            int vertex = node(gen);
+            return vertex;
+        }
 };
 
 #endif /* HELPER_H_ */

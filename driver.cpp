@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cassert>
 #include <chrono>
+#include <unordered_set>
 
 using namespace std;
 
@@ -48,6 +49,13 @@ void replace_nodes_modularity(Community&, WeightedGraph&, Graph&, std::vector<Ed
 
 double modularity_gain(int, int, int, WeightedGraph&, Graph&, Community&);
 
+void split_communities(WeightedGraph& wg, Graph& g, Community& c, Helper& helper);
+
+void do_bfs(Graph& g, WeightedGraph& wg, Community& c, Helper& h, int start_node, int curr_comm, std::vector<int>& new_comm_nodes, std::unordered_set<int>& comm_set, int final_size);
+
+int pick_new_bfs_vertex(Helper& h, int size, std::vector<int>& nodes, std::unordered_set<int>& comm_set);
+
+void add_new_community(Community& c, std::vector<int>& new_comm_nodes);
 
 struct greater_than_key
 {
@@ -1170,12 +1178,16 @@ int main(int argc, char** argv)
         c.reset_degrees();
         c.recalc_degrees(finalEdges);
 		wg = c.rebuild_graph(finalEdges, g);
+    
+    split_communities(wg, g, c, helper);
+    c.recalc_degrees(finalEdges);
+    wg = c.rebuild_graph(finalEdges, g);
 
 		// try splitting the best_wg
 //		split_clusters(wg, c, g);        
     
     std::shuffle(graph_nodes.begin(), graph_nodes.end(), helper.gen);
-        replace_nodes_modularity(c, wg, g, finalEdges, graph_nodes);
+    replace_nodes_modularity(c, wg, g, finalEdges, graph_nodes);
         
 //		c.reset_degrees();
 //		c.recalc_degrees(finalEdges);
@@ -1362,6 +1374,161 @@ void expand_clique(WeightedGraph& wg, vector<int>& potential_vertex, Graph& g, C
 			}
 		}
 	}
+}
+
+void split_communities(WeightedGraph& wg, Graph& g, Community& c, Helper& helper)
+{
+  const int split_size = 3;
+  
+  for (int i = 0; i < wg.num_vertices; ++i)
+  {
+    if (wg.vertex[i].id == -1 ||
+        wg.vertex[i].origNodes.size() == 0)
+      continue;
+    
+    auto curr_size = wg.vertex[i].origNodes.size();
+    auto curr_comm = wg.vertex[i].id;
+    
+    // Split the community into equal sized ones
+    auto new_size = curr_size / split_size;
+    
+    std::unordered_set<int> all_moved_nodes;
+    all_moved_nodes.reserve(curr_size - new_size);
+    
+    for(int j = 0; j < split_size - 1; ++j)
+    {
+      // Store the nodes of the new community that will be formed
+      std::vector<int> new_comm_nodes;
+      
+      // Start the BFS with some random node in this community
+      int start_node = pick_new_bfs_vertex(helper, curr_size, wg.vertex[i].origNodes, all_moved_nodes);
+      if (start_node == -1)
+        break;
+      
+      // Keep doing our BFS until the new community size is >= expected size
+      while (1)
+      {
+        do_bfs(g, wg, c, helper, start_node, curr_comm, new_comm_nodes, all_moved_nodes, new_size);
+        if (new_comm_nodes.size() < new_size)
+        {
+          start_node = pick_new_bfs_vertex(helper, curr_size, wg.vertex[i].origNodes, all_moved_nodes);
+          if (start_node == -1)
+            break;
+        }
+        else // we are done with the BFS
+        {
+          break;
+        }
+      }
+      
+      // Now that the BFS has completed, we need to create this new community
+      add_new_community(c, new_comm_nodes);
+    }
+  }
+}
+
+void add_new_community(Community& c, std::vector<int>& new_comm_nodes)
+{
+  // Gotta have something to add!
+  assert(new_comm_nodes.size() > 0);
+  
+  int new_cluster = c.comm;
+  ++c.comm;
+  
+  for(const auto i : new_comm_nodes)
+  {
+    c.n2c[i] = new_cluster;
+  }
+}
+
+int pick_new_bfs_vertex(Helper& h, int size, std::vector<int>& nodes, std::unordered_set<int>& comm_set)
+{
+  // Search for the next vertex to start the BFS from
+  // but it must not have already been included from our
+  // previous BFS run
+  
+  int next_vertex = -1;
+  if (nodes.size() == comm_set.size())
+    return next_vertex;
+  
+  while (1)
+  {
+    int idx = h.newBfsNode(size);
+    int vertex = nodes[idx];
+    auto search = comm_set.find(vertex);
+    if (search == comm_set.end())
+    {
+      next_vertex = vertex;
+      break;
+    }
+  }
+  return next_vertex;
+}
+
+void do_bfs(Graph& g, WeightedGraph& wg, Community& c, Helper& h, int start_node, int curr_comm, std::vector<int>& new_comm_nodes, std::unordered_set<int>& comm_set, int final_size)
+{
+  auto curr_size = new_comm_nodes.size();
+  
+  //if (curr_size > 0)
+    //std::cout << "Starting do_bfs with a partly filled vector \n";
+  
+  // Put the start node in the new community
+  new_comm_nodes.push_back(start_node);
+  comm_set.insert(start_node);
+  
+  while (1)
+  {
+    // The BFS will continue with the neighbor having the maximum degree
+    // Maybe do it with a randomly chosen neighbor instead??
+    int max_degree = 0;
+    int max_degree_node = -1;
+    
+    for (int i = 0; i < g.vertex[start_node].degree; ++i)
+    {
+      // If any of this node's neighbors are in the same community as the present one,
+      // write them to the new community
+      
+      int neighbor = g.vertex[start_node].neighbors[i];
+      //
+      // If the neighbor is in the same community as start_node
+      // then mark it to be moved to the new community
+      //
+      if (c.n2c[neighbor] == curr_comm)
+      {
+        // If this neighbor has been processed already then skip it
+        auto search = comm_set.find(neighbor);
+        if (search != comm_set.end())
+        {
+          continue;
+        }
+        
+        new_comm_nodes.push_back(neighbor);
+        comm_set.insert(neighbor);
+        
+        if (new_comm_nodes.size() >= final_size)
+          return;
+        
+        if (g.vertex[neighbor].degree > max_degree)
+        {
+          max_degree = g.vertex[neighbor].degree;
+          max_degree_node = neighbor;
+        }
+      }
+    }
+    
+    // We are done adding the neighbors of start_node to the new community.
+    // If this new community size is >= the final_size permitted then we
+    // are done! OR if we couldn't find any one to add (max_degree_node = -1)
+    if (new_comm_nodes.size() >= final_size || max_degree_node == -1)
+    {
+      break;
+    }
+    else
+    {
+      // Continue the BFS with the highest degree vertex found
+      start_node = max_degree_node;
+    }
+  }
 }
 
 // add adjacent vertex with highest degree to potential clique, if possible

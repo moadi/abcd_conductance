@@ -1175,45 +1175,49 @@ int main(int argc, char** argv)
 				c.n2c[*it] = i;
 			}
 		}
-        c.reset_degrees();
-        c.recalc_degrees(finalEdges);
-		wg = c.rebuild_graph(finalEdges, g);
     
-    split_communities(wg, g, c, helper);
+    c.reset_degrees();
     c.recalc_degrees(finalEdges);
-    wg = c.rebuild_graph(finalEdges, g);
+		wg = c.rebuild_graph(finalEdges, g);
 
 		// try splitting the best_wg
 //		split_clusters(wg, c, g);        
     
     std::shuffle(graph_nodes.begin(), graph_nodes.end(), helper.gen);
     replace_nodes_modularity(c, wg, g, finalEdges, graph_nodes);
+    
+    // check if splitting improves the solution
+    new_modularity = wg.modularity(g);
+    if(new_modularity > best_modularity)
+    {
+      //best_wg = c.rebuild_graph(finalEdges, g);
+      best_wg = wg;
+      
+      best_modularity = new_modularity;
+      
+      //calc_conductance(best_wg, g, best_modularity, file_no);
+    }
+    else
+    {
+      //best_wg = wg;
+      ++final_decrease;
+    }
+    
+    //wg.displayGraph();
         
 //		c.reset_degrees();
 //		c.recalc_degrees(finalEdges);
-		wg = c.rebuild_graph(finalEdges, g);
+    split_communities(wg, g, c, helper);
+    c.recalc_degrees(finalEdges);
+    wg = c.rebuild_graph(finalEdges, g);
+    //wg.displayGraph();
+		//wg = c.rebuild_graph(finalEdges, g);
         
 //        wg.displayGraph();
-        
-		new_modularity = wg.modularity(g);
-        
+    
         // write conductance to file
 //        calc_conductance(wg, g, new_modularity, file_no);
 
-		// check if splitting improves the solution
-		if(new_modularity > best_modularity)
-		{
-			//best_wg = c.rebuild_graph(finalEdges, g);
-            best_wg = wg;
-            
-			best_modularity = new_modularity;
-            
-            //calc_conductance(best_wg, g, best_modularity, file_no);
-		}
-		else
-		{
-			++final_decrease;
-		}
 	}
     
     auto time_taken = (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000);

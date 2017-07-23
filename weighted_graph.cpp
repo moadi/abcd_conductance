@@ -463,7 +463,11 @@ int WeightedGraph::getRandomCommunity(Helper& helper)
     while(1)
     {
         comm = helper.newCommunity();
-        if (vertex[comm].id != -1)
+        if (vertex[comm].id == -1 || vertex[comm].origNodes.size() == 0)
+        {
+            continue;
+        }
+        else
         {
             break;
         }

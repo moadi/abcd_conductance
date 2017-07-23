@@ -975,11 +975,11 @@ int main(int argc, char** argv)
 		{
 				while(decrease < 5)
 				{
-          c.reset_degrees();
+          /*c.reset_degrees();
 					c.recalc_degrees(finalEdges);
 					c.sort_out_degrees();
 					c.reassign_communities();
-          wg = c.rebuild_graph(finalEdges, g);
+          wg = c.rebuild_graph(finalEdges, g);*/
           
           c.reset_degrees();
           c.recalc_degrees(finalEdges);

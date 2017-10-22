@@ -32,6 +32,206 @@ Community::Community(Graph& graph)
 	}
 }
 
+WeightedGraph Community::partition_with_edge_density(Graph& g, std::vector<Edge>& finalEdges)
+{
+	WeightedGraph wg;
+	wg.vertex.resize(g.num_vertices);
+
+	for(auto it = finalEdges.begin(); it != finalEdges.end(); ++it)
+	{
+		int a = it->v1;
+		int b = it->v2;
+		double phm = it->phm;
+
+ 		//both nodes aren't in any community
+		if((n2c[a] == -1) && (n2c[b] == -1))
+		{
+			n2c[a] = comm; //assign a community to both nodes
+			n2c[b] = comm;
+
+			wg.vertex[comm].origNodes.push_back(a); //add the nodes to the origNodes vector
+			wg.vertex[comm].origNodes.push_back(b);
+
+			wg.vertex[comm].weight += phm; //update the weight of the new vertex and its in_links
+			wg.vertex[comm].in_links++;
+			wg.vertex[comm].total += phm;
+            
+            // add the degrees to the data member degree_sum
+            wg.vertex[comm].degree_sum += g.vertex[a].degree;
+            wg.vertex[comm].degree_sum += g.vertex[b].degree;
+
+			++in_degree[a];
+			++in_degree[b];
+
+			comm++;
+		}
+		else if (n2c[a] == -1 || n2c[b] == -1)
+		{
+			// In order to add the node to an existing
+			// community, ensure that it does not reduce
+			// the edge density below a certain threshold
+			int v = (n2c[a] == -1 ? a : b); //<-- vertex to be added
+			int comm_to_add = (v == a ? n2c[b] : n2c[a]); //<-- community to add to
+			
+			/*
+				- Find the number of connections this vertex
+				  has to nodes in the community
+				- Compute new edge density and compare to threshold
+				- Add to community if edge density stays above the threshold...
+			*/
+			auto neighbors = find_num_links(v, comm_to_add, wg, g);
+			int num_links = neighbors.size();
+			int new_num_vertices = wg.vertex[comm_to_add].origNodes.size() + 1;
+			int new_num_edges = wg.vertex[comm_to_add].in_links + num_links;
+
+			double edge_density = static_cast<double>((2 * (double) new_num_edges) / ( (double)new_num_vertices * (new_num_vertices - 1)));
+			if (edge_density >= 0.75)
+			{
+				wg.vertex[comm_to_add].origNodes.push_back(v);
+				wg.vertex[comm_to_add].in_links++;
+				n2c[v] = comm_to_add;
+				for(auto k : neighbors)
+				{
+					++in_degree[k];
+				}
+			}
+		}
+		else if (n2c[a] != n2c[b]) //the 2 nodes are in a different community, update crossing edges and pheromone
+		{
+			pair<int, int> edge;
+			if(n2c[a] < n2c[b])
+			{
+				edge = make_pair(n2c[a], n2c[b]);
+			}
+			else
+			{
+				edge = make_pair(n2c[b], n2c[a]);
+			}
+
+			auto it1 = wg.edges.cross_edges.find(edge);
+			auto it2 = wg.edges.cross_phm.find(edge);
+
+			auto out_deg_it_1 = out_degree[a].find(n2c[b]);
+			auto out_deg_it_2 = out_degree[b].find(n2c[a]);
+
+			if(it1 == wg.edges.cross_edges.end()) //if this pair does not exist in the table ==> first crossing edge
+			{
+				wg.vertex[n2c[a]].degree++;
+				wg.vertex[n2c[b]].degree++;
+
+				wg.vertex[n2c[a]].neighbors.push_back(n2c[b]);
+				wg.vertex[n2c[b]].neighbors.push_back(n2c[a]);
+
+				wg.vertex[n2c[a]].total += phm;
+				wg.vertex[n2c[b]].total += phm;
+
+				wg.edges.cross_edges.insert(make_pair(edge, 1));
+				wg.edges.cross_phm.insert(make_pair(edge, phm));
+
+			}
+			else //if the pair exists, then this is another crossing edge
+			{
+				/*crossing_edges_it->second = crossing_edges_it->second + 1; //increment the number of crossing edges
+				out_phm_it->second = out_phm_it->second + phm; //increment crossing pheromone*/
+
+				wg.vertex[n2c[a]].total += phm;
+				wg.vertex[n2c[b]].total += phm;
+
+				it1->second = it1->second + 1;
+				it2->second = it2->second + phm;
+			}
+
+			if(out_deg_it_1 == out_degree[a].end() && out_deg_it_2 == out_degree[b].end()) //first time this edge is encountered
+			{
+				out_degree[a].insert(make_pair(n2c[b], 1));
+				out_degree[b].insert(make_pair(n2c[a], 1));
+
+				tot_out[a]++;
+				tot_out[b]++;
+			}
+			else if((out_deg_it_1 == out_degree[a].end()) && (out_deg_it_2 != out_degree[b].end()))
+			{
+				out_degree[a].insert(make_pair(n2c[b], 1));
+				out_deg_it_2->second++;
+
+				tot_out[a]++;
+				tot_out[b]++;
+			}
+			else if((out_deg_it_1 != out_degree[a].end()) && (out_deg_it_2 == out_degree[b].end()))
+			{
+				out_degree[b].insert(make_pair(n2c[a], 1));
+				out_deg_it_1->second++;
+
+				tot_out[a]++;
+				tot_out[b]++;
+			}
+			else
+			{
+				out_deg_it_1->second++;
+				out_deg_it_2->second++;
+
+				tot_out[a]++;
+				tot_out[b]++;
+			}
+		}
+	}
+
+	for(int i = 0; i < n2c.size(); ++i)
+	{
+		if (n2c[i] == -1)
+		{
+			// The node i is not assigned a community
+			// place it in its own community
+			n2c[i] = comm;
+			wg.vertex[comm].origNodes.push_back(i);
+			wg.vertex[comm].degree_sum += g.vertex[i].degree;
+			tot_out[i] += g.vertex[i].degree;
+
+			// iterate over all neighbors and update out degree map
+			for(int k = 0; k < g.vertex[i].degree; ++k)
+			{
+				int neighbor = g.vertex[i].neighbors[k];
+				auto it = out_degree[i].find(n2c[neighbor]);
+				if (it == out_degree[i].end())
+				{
+					out_degree[i].insert(make_pair(n2c[neighbor], 1));
+				}
+				else
+				{
+					++(it->second);
+				}
+			}
+			comm++;
+		}
+	}
+
+	wg.vertex.resize(comm);
+	wg.num_vertices = comm;
+
+	for(int i = 0; i < comm; i++)
+	{
+		wg.vertex[i].id = i;
+	}
+
+	return wg;
+}
+
+// Find the number of connections node has to vertices in community
+std::vector<int> Community::find_num_links(int node, int community, WeightedGraph& wg, Graph& g)
+{
+	std::vector<int> neighbors;
+	for(int i = 0; i < g.vertex[node].degree; ++i)
+	{
+		int neighbor = g.vertex[node].neighbors[i];
+		const auto& node_list = wg.vertex[community].origNodes;
+		if (std::find(node_list.begin(), node_list.end(), neighbor) != node_list.end())
+		{
+			neighbors.push_back(neighbor);
+		}
+	}
+	return neighbors;
+}
+
 WeightedGraph Community::partition_one_level(Graph& g, std::vector<Edge>& finalEdges)
 {
 	WeightedGraph wg;

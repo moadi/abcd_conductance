@@ -918,7 +918,9 @@ int main(int argc, char** argv)
   
   start = clock();
 	
-	WeightedGraph wg = c.partition_one_level(g, finalEdges);
+	//WeightedGraph wg = c.partition_one_level(g, finalEdges);
+	WeightedGraph wg = c.partition_with_edge_density(g, finalEdges);
+	//exit(EXIT_SUCCESS);
     //WeightedGraph wg;
     
     //wg = best_explr_wg;

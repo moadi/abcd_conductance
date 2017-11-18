@@ -32,7 +32,7 @@ Community::Community(Graph& graph)
 	}
 }
 
-WeightedGraph Community::partition_with_edge_density(Graph& g, std::vector<Edge>& finalEdges)
+WeightedGraph Community::partition_with_edge_density(Graph& g, std::vector<Edge>& finalEdges, double thresh)
 {
 	WeightedGraph wg;
 	wg.vertex.resize(g.num_vertices);
@@ -85,7 +85,7 @@ WeightedGraph Community::partition_with_edge_density(Graph& g, std::vector<Edge>
 			int new_num_edges = wg.vertex[comm_to_add].in_links + num_links;
 
 			double edge_density = static_cast<double>((2 * (double) new_num_edges) / ( (double)new_num_vertices * (new_num_vertices - 1)));
-			if (edge_density >= 0.75)
+			if (edge_density >= thresh)
 			{
 				wg.vertex[comm_to_add].origNodes.push_back(v);
 				wg.vertex[comm_to_add].in_links++;

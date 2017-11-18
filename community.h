@@ -28,7 +28,7 @@ class Community
 		WeightedGraph partition_one_level(Graph&, std::vector<Edge>&); //partition the graph with the initial sorted edges given
 
 		std::vector<int> find_num_links(int node, int community, WeightedGraph& wg, Graph& g);
-		WeightedGraph partition_with_edge_density(Graph& g, std::vector<Edge>& finalEdges);
+		WeightedGraph partition_with_edge_density(Graph& g, std::vector<Edge>& finalEdges, double thresh = 0.75);
 
 		void displayPartition(); //displays the partition of the level
 

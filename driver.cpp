@@ -915,11 +915,26 @@ int main(int argc, char** argv)
 
 
   Community c(g);
-  
+  WeightedGraph explr_wg;
   start = clock();
+
+  double thresh = 0.05;
+  while (thresh <= 0.75)
+  {
+	std::shuffle(std::begin(finalEdges), std::end(finalEdges), std::default_random_engine(helper.seed));
+	explr_wg = c.partition_with_edge_density(g, finalEdges, thresh);
+	new_explr_mod = explr_wg.modularity(g);
+	if (new_explr_mod > best_explr_mod)
+	{
+		best_explr_wg = explr_wg;
+		best_explr_mod = new_explr_mod;
+	}
+	thresh += 0.05;
+  }
 	
 	//WeightedGraph wg = c.partition_one_level(g, finalEdges);
-	WeightedGraph wg = c.partition_with_edge_density(g, finalEdges);
+	WeightedGraph wg;
+	wg = best_explr_wg;
 	//exit(EXIT_SUCCESS);
     //WeightedGraph wg;
     
@@ -931,7 +946,7 @@ int main(int argc, char** argv)
 	WeightedGraph best_wg; //keeps track of the best partition so far
 
 	//best_wg = c.partition_one_level(g, finalEdges);
-    best_wg = wg;
+    best_wg = best_explr_wg;
     
     // tabu list for each vertex, we don't want to reassign to the same cluster
     ClusterTabuList * perturb_tabu_list = new ClusterTabuList[g.num_vertices];

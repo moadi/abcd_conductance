@@ -375,7 +375,7 @@ void WeightedGraph::mergeClusters(std::vector<pair<pair<int, int>, double > >& f
 	}
 }
 
-void WeightedGraph::mergeClusters(int num_edges)
+void WeightedGraph::merge_clusters_modularity(int num_edges)
 {
     for (int i = 0; i < num_vertices; i++)
     {

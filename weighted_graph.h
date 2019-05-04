@@ -77,7 +77,7 @@ class WeightedGraph
 
 		void mergeClusters(std::vector<pair<pair<int, int>, double > >&, Parameters&);
     
-        void mergeClusters(int); //merge using modularity
+        void merge_clusters_modularity(int); //merge using modularity improvement
     
         double modularity_gain(int, int, int); // computes gain in modularity
 

@@ -5,3 +5,4 @@ output
 comm-struc
 final_conductance
 *.o
+.DS_Store
